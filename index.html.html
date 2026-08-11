@@ -1,0 +1,2853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ink and Alibi — 铅字与谎言</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0b0906;font-family:'Courier New',Courier,monospace}
+
+/* ── STATUS BAR ─────────────────────────────────────────────── */
+#sbar{
+  position:fixed;top:0;left:0;right:0;height:32px;z-index:9999;
+  background:#0f0c07;border-bottom:1px solid #3a2e10;
+  display:flex;align-items:center;padding:0 12px;gap:18px;
+  font-size:11px;color:#a08848;letter-spacing:.04em;
+}
+#sbar span{white-space:nowrap}
+#sbar .hi{color:#c8a860;font-weight:bold}
+#sbar .warn{color:#cc6644}
+#sbar .good{color:#44aa44}
+
+/* ── PAPER MODE ─────────────────────────────────────────────── */
+#paper-wrap{
+  position:fixed;top:32px;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#paper-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transition:background-image .3s ease;
+}
+#paper-bg.dim{background-color:rgba(0,0,0,.55);background-blend-mode:multiply;}
+#paper-panel{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;
+  width:min(860px,96vw);
+  max-height:calc(100vh - 32px);
+  background:rgba(14,10,4,.88);
+  border:1px solid #4a3510;
+  box-shadow:0 0 40px rgba(0,0,0,.7);
+}
+#paper-scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:18px 22px 10px;
+  scrollbar-width:thin;scrollbar-color:#7a5830 transparent;
+}
+#paper-title{
+  font-size:clamp(14px,1.7vw,20px);font-weight:900;text-transform:uppercase;
+  letter-spacing:.1em;color:#d4a84e;border-bottom:1px solid #5a3e14;
+  padding-bottom:.5em;margin-bottom:.8em;
+}
+#paper-body{
+  font-size:clamp(13px,1.3vw,17px);line-height:1.85;color:#c8b890;
+}
+#paper-body p{margin-bottom:.55em}
+#paper-body strong{color:#e8d098}
+#paper-body em{color:#a89060}
+#paper-body .dim{color:#6a5838}
+#paper-body .good{color:#44aa44}
+#paper-body .warn{color:#cc6644}
+#paper-body .head{font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#d4a84e;font-size:1.05em}
+#paper-body hr{border:none;border-top:1px dashed #4a3510;margin:.75em 0}
+#paper-btns{
+  padding:10px 14px;border-top:1px solid #3a2810;
+  display:flex;flex-direction:column;gap:6px;max-height:260px;
+  overflow-y:auto;scrollbar-width:thin;scrollbar-color:#5a3e14 transparent;
+}
+#paper-btns button{
+  font-family:'Courier New',Courier,monospace;
+  font-size:clamp(11px,1.15vw,15px);font-weight:700;
+  letter-spacing:.05em;text-align:left;
+  padding:.42em 1em;cursor:pointer;
+  border:1px solid #6a4818;background:#1a1208;color:#c8a060;
+  transition:background .1s,color .1s;
+}
+#paper-btns button:hover{background:#2a1e08;color:#e8d098}
+#paper-btns button:disabled{opacity:.4;cursor:not-allowed}
+#paper-btns .sep{color:#5a3e14;font-size:10px;padding:.1em 0;letter-spacing:.1em;pointer-events:none;border:none;background:none}
+
+/* ── MORNING TABLE SCENE ────────────────────────────────────── */
+#morning-wrap{
+  position:fixed;top:32px;left:0;right:0;bottom:0;display:none;
+}
+.morning-scene{
+  position:relative;
+  width:min(100vw,calc((100vh - 32px)*1280/720));
+  height:min(calc(100vh - 32px),calc(100vw*720/1280));
+  margin:auto;
+  top:50%;transform:translateY(-50%);
+  overflow:hidden;
+}
+.morning-scene img.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.morning-scene .m-newspaper{
+  position:absolute;left:-2%;top:7%;width:39%;cursor:pointer;
+  transition:filter .14s;
+}
+.morning-scene .m-newspaper:hover{filter:brightness(1.12) drop-shadow(0 0 8px rgba(220,180,80,.5))}
+.morning-scene .m-letter{
+  position:absolute;right:-2%;top:55.5%;width:37%;cursor:pointer;
+  transition:filter .14s;
+}
+.morning-scene .m-letter:hover{filter:brightness(1.12) drop-shadow(0 0 8px rgba(220,180,80,.5))}
+.morning-panel{
+  position:absolute;left:0;right:0;bottom:0;
+  background:rgba(10,7,2,.9);border-top:2px solid #3a2810;
+  display:flex;flex-direction:column;
+}
+.morning-panel-hdr{
+  padding:5px 14px;font-size:clamp(11px,1.1vw,14px);
+  color:#708860;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid #2a1e08;
+}
+.morning-panel-text{
+  padding:8px 14px;font-size:clamp(11px,1.15vw,15px);line-height:1.75;color:#b8a880;
+  max-height:clamp(110px,26vh,190px);overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#5a3e14 transparent;
+}
+.morning-panel-btn{
+  margin:6px 14px 8px;
+  font-family:'Courier New',Courier,monospace;
+  font-size:clamp(8px,.9vw,12px);font-weight:700;padding:.45em 1.2em;
+  cursor:pointer;border:1px solid #6a4818;background:#1a1208;color:#c8a060;
+  align-self:flex-start;transition:background .1s;
+}
+.morning-panel-btn:hover{background:#2a1e08;color:#e8d098}
+
+/* ── CASE SELECT SCENE ──────────────────────────────────────── */
+#case-wrap{
+  position:fixed;top:32px;left:0;right:0;bottom:0;display:none;
+}
+.case-scene{
+  position:relative;
+  width:min(100vw,calc((100vh - 32px)*1280/720));
+  height:min(calc(100vh - 32px),calc(100vw*720/1280));
+  margin:auto;top:50%;transform:translateY(-50%);overflow:hidden;
+}
+.case-scene img.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.case-scene-hdr{
+  position:absolute;top:0;left:0;right:0;
+  background:rgba(0,0,0,.7);padding:7px 14px 6px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.case-scene-hdr .day-lbl{font-size:clamp(10px,1.4vw,18px);font-weight:900;color:#f2e2ae;letter-spacing:.05em}
+.case-scene-hdr .stat-lbl{font-size:clamp(7px,.85vw,11px);color:#708860}
+.case-scene-hdr .pub-btn{
+  font-family:'Courier New',Courier,monospace;font-size:clamp(8px,.9vw,12px);font-weight:700;
+  padding:.35em .9em;cursor:pointer;border:1px solid #6a4818;background:#1c1408;color:#c8a060;
+}
+.case-scene-hdr .pub-btn:hover{background:#2a1e08}
+.case-folder{
+  position:absolute;cursor:pointer;overflow:hidden;
+  transition:filter .12s;
+}
+.case-folder:hover{filter:brightness(1.1) drop-shadow(0 0 10px rgba(200,160,80,.4))}
+.case-folder img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.case-folder .fid{
+  position:absolute;font-size:clamp(7px,.85vw,11px);font-weight:900;
+  color:#4a2e08;letter-spacing:.05em;text-align:center;width:100%;
+  top:42%;transform:translateY(-50%);
+}
+.case-folder .ftitle{
+  position:absolute;font-size:clamp(6px,.75vw,10px);color:#2a1808;
+  text-align:center;width:100%;padding:0 6%;top:52%;line-height:1.4;
+}
+.case-folder .fev{
+  position:absolute;font-size:clamp(6px,.7vw,9px);font-weight:700;
+  text-align:center;width:100%;top:68%;
+}
+
+/* ── DESK MODE ──────────────────────────────────────────────── */
+#desk-wrap{
+  position:fixed;top:32px;left:0;right:0;bottom:0;
+  display:none;align-items:center;justify-content:center;
+}
+.scene{
+  position:relative;
+  width:min(100vw,calc((100vh - 32px)*1680/936));
+  height:min(calc(100vh - 32px),calc(100vw*936/1680));
+  flex-shrink:0;overflow:hidden;
+}
+.scene-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
+.left-pane{
+  position:absolute;left:1.07%;top:2.14%;width:33.15%;height:96.37%;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#desk-hdr{
+  font-family:'Courier New',Courier,monospace;
+  font-size:clamp(6px,.75vw,10px);font-weight:700;
+  background:rgba(10,6,2,.88);color:#c8a060;
+  padding:4px 8px;border-bottom:1px solid #4a3010;
+  letter-spacing:.03em;min-height:28px;
+  display:flex;align-items:center;flex-shrink:0;
+}
+.lp-scroll{
+  position:relative;
+  flex:1;overflow-y:auto;overflow-x:hidden;padding:5.5% 6% 4%;
+  scrollbar-width:thin;scrollbar-color:#9a7a58 transparent;
+}
+.bio-photo{
+  position:absolute;right:4%;bottom:3%;width:40%;max-height:44%;
+  object-fit:contain;background:#f2e6c8;border:2px solid #6a4a28;
+  padding:4px;box-shadow:2px 3px 6px rgba(0,0,0,.35);pointer-events:none;
+}
+.lp-scroll.fade-out{opacity:0;transition:opacity .1s ease}
+.lp-scroll.fade-in{opacity:1;transition:opacity .18s ease}
+.lp-title{
+  font-family:'Courier New',Courier,monospace;
+  font-size:clamp(12px,1.6vw,20px);font-weight:900;text-transform:uppercase;
+  letter-spacing:.09em;color:#160900;border-bottom:2px solid #9a6030;
+  padding-bottom:.4em;margin-bottom:.75em;
+}
+.lp-body{font-family:'Courier New',Courier,monospace;font-size:clamp(10px,1.25vw,16px);line-height:1.78;color:#2a1a08}
+.lp-body p{margin-bottom:.5em}
+.lp-body strong{color:#140800}
+.lp-meta{font-style:italic;color:#6a4a28;margin-bottom:.65em;font-size:clamp(9px,1.1vw,14px)}
+.lp-placeholder{font-family:'Courier New',Courier,monospace;font-size:clamp(9.5px,1.15vw,15px);
+  color:#9a8a74;font-style:italic;text-align:center;margin-top:2.5em;line-height:1.9}
+.contact-list{list-style:none;margin-top:.5em}
+.contact-list li{
+  font-family:'Courier New',Courier,monospace;font-size:clamp(9.5px,1.15vw,15px);
+  padding:.42em .3em;border-bottom:1px dashed #c8a472;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:baseline;
+  color:#2a1a08;transition:background .08s,padding-left .08s;
+}
+.contact-list li:hover{background:rgba(170,120,55,.13);padding-left:.55em}
+.contact-list li.cat-hdr{
+  font-size:clamp(8.5px,1.0vw,13px);text-transform:uppercase;letter-spacing:.2em;
+  color:#9a6030;cursor:default;border-bottom:1px solid #b89060;
+  padding-top:.8em;padding-bottom:.2em;
+}
+.contact-list li.cat-hdr:hover{background:none;padding-left:.3em}
+.contact-cost{font-size:clamp(8px,.95vw,12px);color:#8a5828;margin-left:.5em;flex-shrink:0}
+.evidence-line{
+  background:rgba(210,185,55,.15);border-left:3px solid #b08818;
+  padding:.35em .6em;margin-top:.55em;
+  font-family:'Courier New',Courier,monospace;font-size:clamp(8.5px,1.0vw,13px);
+  color:#1e0e00;font-style:italic;line-height:1.65;
+}
+.confirm-box{margin-top:1.1em;padding:.75em .85em;border:2px solid #9a6030;background:rgba(155,110,50,.07)}
+.confirm-box p{font-family:'Courier New',Courier,monospace;font-size:clamp(10px,1.2vw,16px);
+  color:#2a1a08;margin-bottom:.7em;line-height:1.65}
+.confirm-btns{display:flex;gap:.75em}
+.confirm-btn{
+  font-family:'Courier New',Courier,monospace;font-size:clamp(8.5px,1.0vw,13px);
+  font-weight:700;letter-spacing:.1em;padding:.32em 1.1em;cursor:pointer;
+  border:2px solid #8a5828;background:#e4d0a8;color:#1e0e00;transition:background .12s;
+}
+.confirm-btn:hover{background:#ceb882}
+.back-link{
+  display:inline-block;margin-top:1em;
+  font-family:'Courier New',Courier,monospace;font-size:clamp(8.5px,1.0vw,13px);
+  color:#9a6030;cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+}
+.back-link:hover{color:#2a1a08}
+#desk-btns{
+  border-top:1px solid #3a2810;background:rgba(8,5,1,.9);
+  padding:4px 6px;max-height:200px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:3px;flex-shrink:0;
+  scrollbar-width:thin;scrollbar-color:#4a3010 transparent;
+}
+#desk-btns button{
+  font-family:'Courier New',Courier,monospace;font-size:clamp(6px,.72vw,9.5px);
+  font-weight:700;text-align:left;padding:.3em .7em;cursor:pointer;
+  border:1px solid #5a3e10;background:#120e04;color:#b89050;
+  transition:background .1s;
+}
+#desk-btns button:hover{background:#1e1608;color:#d4a860}
+#desk-btns button:disabled{opacity:.4;cursor:not-allowed;color:#7a6030}
+#desk-btns .dsep{color:#4a3010;font-size:9px;padding:.1em 0;pointer-events:none;
+  border:none;background:none;letter-spacing:.1em}
+.prop{position:absolute;cursor:pointer;image-rendering:pixelated;transition:filter .14s,transform .1s}
+.prop:hover{filter:brightness(1.08) drop-shadow(0 0 7px rgba(215,155,45,.65))}
+.prop.inactive{opacity:.38;filter:grayscale(.6);cursor:not-allowed;pointer-events:none}
+.prop.used{filter:brightness(1.05) drop-shadow(0 0 5px rgba(215,185,45,.8))}
+.drawer-btn{
+  position:absolute;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;transition:filter .14s;padding:3px;
+}
+.drawer-btn:hover{filter:brightness(.82) sepia(.25)}
+.drawer-btn .dlabel{
+  font-family:'Courier New',Courier,monospace;font-size:clamp(5.5px,.68vw,9px);
+  font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#362010;
+  text-align:center;line-height:1.3;text-shadow:0 1px 0 rgba(255,240,200,.35);pointer-events:none;
+}
+.draggable{cursor:grab;position:absolute;image-rendering:pixelated;transition:filter .14s}
+.draggable:hover{filter:brightness(1.08) drop-shadow(0 0 7px rgba(215,155,45,.65))}
+.draggable.is-dragging{cursor:grabbing;z-index:200!important;filter:brightness(1.06) drop-shadow(0 5px 14px rgba(0,0,0,.55));transition:none}
+
+/* ── Evidence "scissors" cutting ─────────────────────────────── */
+.ev-drag{border-bottom:1px dashed #9a6030}
+.ev-drag.claimed{border-bottom:1px dashed #b8a888;color:#8a7a5a}
+body.scissor-mode,body.scissor-mode *{
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='none' stroke='%23e8d098' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='6' cy='6' r='3'/%3E%3Ccircle cx='6' cy='22' r='3'/%3E%3Cline x1='9' y1='8' x2='25' y2='24'/%3E%3Cline x1='9' y1='20' x2='25' y2='4'/%3E%3C/g%3E%3C/svg%3E") 6 14, crosshair !important;
+}
+body.scissor-mode .ev-drag:not(.claimed){background:rgba(210,185,55,.22)}
+#ev-icons{position:absolute;inset:0;z-index:9;pointer-events:none}
+.ev-icon{
+  position:absolute;width:2.6%;height:3.4%;
+  background:#c8a060;border:1px solid #2a1808;cursor:pointer;
+  pointer-events:auto;box-shadow:1px 1px 3px rgba(0,0,0,.5);
+}
+.ev-icon:hover{filter:brightness(1.18)}
+.ev-icon.pro{background:#6ec26e}
+.ev-icon.con{background:#c26e6e}
+#ev-popup{
+  position:absolute;left:85%;top:58.4%;width:12%;height:31.6%;
+  font-family:'Courier New',Courier,monospace;font-size:clamp(10px,1.3vw,17px);
+  font-weight:700;color:#2a1a08;line-height:1.5;padding:2px;z-index:50;display:none;
+  overflow-y:auto;pointer-events:auto;
+}
+#ev-popup .ev-close{position:absolute;top:0;right:2px;cursor:pointer;color:#6a4a28;font-weight:900}
+#ev-popup .ev-tag{font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#140800}
+#ev-popup .ev-tag.pro{color:#2f7a2f}
+#ev-popup .ev-tag.con{color:#8a2f2f}
+
+/* ── PRINTING SCREEN ────────────────────────────────────────── */
+#printing-wrap{
+  position:fixed;top:32px;left:0;right:0;bottom:0;
+  display:none;align-items:center;justify-content:center;
+}
+.printing-frame{
+  position:absolute;left:26.5%;top:23%;width:47%;height:52%;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:6% 8%;
+}
+.printing-msg{
+  font-family:'Courier New',Courier,monospace;color:#d8c090;
+  font-size:clamp(9px,1.15vw,15px);text-align:center;line-height:1.7;
+  letter-spacing:.03em;text-shadow:0 1px 3px rgba(0,0,0,.7);
+}
+.printing-spinner{display:flex;gap:.6vw;align-items:flex-end;height:1.2vw}
+.printing-spinner .ps-blk{
+  width:.7vw;height:.7vw;min-width:6px;min-height:6px;
+  background:#5a4a26;image-rendering:pixelated;
+  animation:psPulse 1.1s infinite ease-in-out;
+}
+.printing-spinner .ps-blk:nth-child(1){animation-delay:0s}
+.printing-spinner .ps-blk:nth-child(2){animation-delay:.14s}
+.printing-spinner .ps-blk:nth-child(3){animation-delay:.28s}
+.printing-spinner .ps-blk:nth-child(4){animation-delay:.42s}
+.printing-spinner .ps-blk:nth-child(5){animation-delay:.56s}
+@keyframes psPulse{
+  0%,100%{background:#5a4a26;transform:scaleY(.55)}
+  50%{background:#e8c878;transform:scaleY(1)}
+}
+
+/* ── DAY RESULTS PAGE ─────────────────────────────────────── */
+.result-line-headline{
+  font-family:Georgia,'Times New Roman',Cambria,serif;
+  font-weight:900;color:#e0b860;text-transform:uppercase;
+  letter-spacing:.02em;line-height:1.2;
+  font-size:clamp(22px,4vw,40px);
+  margin:.5em 0 .2em;text-shadow:0 2px 5px rgba(0,0,0,.55);
+}
+.result-line-headline:first-child{margin-top:0}
+.result-line-body{
+  font-family:'Courier New',Courier,monospace;
+  font-size:clamp(13px,1.7vw,19px);line-height:1.7;color:#c8b890;margin-bottom:.5em;
+}
+.result-stats{display:flex;flex-wrap:wrap;gap:.5em;margin:.2em 0 1.1em}
+.result-stat-chip{
+  display:inline-block;padding:.28em .75em;border:1px solid #6a4818;
+  font-family:'Courier New',Courier,monospace;font-weight:900;
+  font-size:clamp(11px,1.3vw,15px);letter-spacing:.02em;
+  opacity:0;transform:scale(.4);
+  animation:statPop .38s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.result-stat-chip.pos{color:#6ed46e;border-color:#3a6a3a;background:rgba(90,190,90,.12)}
+.result-stat-chip.neg{color:#e07070;border-color:#7a3a3a;background:rgba(200,90,90,.12)}
+@keyframes statPop{
+  0%{opacity:0;transform:scale(.4)}
+  60%{opacity:1;transform:scale(1.15)}
+  100%{opacity:1;transform:scale(1)}
+}
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div id="sbar">
+  <span id="sb-day" class="hi">Day 1</span>
+  <span id="sb-act">Actions: 4</span>
+  <span id="sb-funds">₵8</span>
+  <span id="sb-cred">Cred: 50</span>
+  <span id="sb-pres">Press: 2</span>
+  <span id="sb-stab">Stab: 70</span>
+  <span id="sb-mute" onclick="toggleMute()" style="cursor:pointer;margin-left:auto;color:#c8a860">&#128266;</span>
+</div>
+
+<!-- PAPER MODE -->
+<div id="paper-wrap">
+  <div id="paper-bg"></div>
+  <div id="paper-panel">
+    <div id="paper-scroll">
+      <div id="paper-title"></div>
+      <div id="paper-body"></div>
+    </div>
+    <div id="paper-btns"></div>
+  </div>
+</div>
+
+<!-- MORNING TABLE -->
+<div id="morning-wrap">
+  <div class="morning-scene" id="morning-scene">
+    <img class="bg" id="morning-bg-img" src="" alt="">
+    <img class="m-newspaper" id="m-news-img" src="morning/newspaper.png" alt="Newspaper" draggable="false" onclick="mShowNews()">
+    <img class="m-letter" id="m-letter-img" src="morning/letter.png" alt="Letter" draggable="false" onclick="mShowLetter()" style="left:64.82%;top:47.17%;width:37.00%;right:auto;">
+    <div class="morning-panel" id="morning-panel">
+      <div class="morning-panel-hdr" id="morning-panel-hdr">── EDITOR'S DESK ──</div>
+      <div class="morning-panel-text" id="morning-panel-text"></div>
+      <button class="morning-panel-btn" id="morning-btn" onclick="beginInvestigation()">▶ Head to the office →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CASE SELECT -->
+<div id="case-wrap">
+  <div class="case-scene" id="case-scene">
+    <img class="bg" src="case-select/cabinet-bg.png" alt="" draggable="false">
+    <div class="case-scene-hdr">
+      <span class="day-lbl" id="cs-day-lbl">Day 1 — SELECT CASE FILE</span>
+      <span class="stat-lbl" id="cs-stat-lbl"></span>
+      <div style="display:flex;gap:8px">
+        <button class="pub-btn" onclick="playSfx('click');csMorgue()">Morgue</button>
+        <button class="pub-btn" onclick="playSfx('click');enterPhase('PUBLISH_MENU')">Wrap up & Publish →</button>
+      </div>
+    </div>
+    <div id="case-folders"></div>
+  </div>
+</div>
+
+<!-- INVESTIGATION DESK -->
+<div id="desk-wrap">
+  <div class="scene" id="scene">
+    <img class="scene-bg" src="desk--UI/detective-desk-ui-empty-base-no-text-v2.png" alt="" draggable="false">
+    <div class="left-pane">
+      <div id="desk-hdr"></div>
+      <div class="lp-scroll" id="lp">
+        <p class="lp-placeholder">Click an item on the desk<br>to investigate.</p>
+      </div>
+      <div id="desk-btns"></div>
+    </div>
+
+    <!-- Upper drawer: Bio Files -->
+    <div class="drawer-btn" style="left:41.9%;top:2.35%;width:10.1%;height:14.7%;" onclick="deskBio()" title="Biographical Files">
+      <span class="dlabel">BIO<br>FILE</span>
+    </div>
+    <!-- Lower drawer: Police Blotter -->
+    <div class="drawer-btn" style="left:41.9%;top:20.83%;width:10.1%;height:13.68%;" onclick="deskBlotter()" title="Police Blotter">
+      <span class="dlabel">POLICE<br>BLOTTER</span>
+    </div>
+
+    <!-- Note -->
+    <img class="prop" src="desk--UI/detective-ui-prop-note-transparent.png"
+      style="left:59.70%;top:1.5%;width:6.8%;height:13.9%;z-index:5;"
+      onclick="deskNote()" title="Editor's Note" alt="" draggable="false">
+    <!-- Map -->
+    <img class="prop" src="desk--UI/detective-ui-prop-map-transparent.png"
+      style="left:56.01%;top:25.68%;width:13.30%;height:14.00%;z-index:5;"
+      onclick="deskMap()" title="Map" alt="" draggable="false">
+    <!-- Telephone -->
+    <img class="prop" src="desk--UI/detective-ui-prop-telephone-transparent.png"
+      style="left:84.97%;top:25.68%;width:14.00%;height:21.00%;z-index:6;"
+      onclick="deskPhone()" title="Telephone" alt="" draggable="false">
+    <!-- Magnifier -->
+    <img class="prop inactive" id="magnifier" src="desk--UI/detective-ui-prop-magnifier-transparent.png"
+      style="left:74%;top:26%;width:10%;height:10.7%;z-index:7;"
+      onclick="deskMagnifier()" title="Magnifier" alt="" draggable="false">
+    <!-- Car Key -->
+    <img class="prop" id="car-key" src="desk--UI/detective-ui-prop-car-key-wall-hook-transparent.png"
+      style="left:89.8%;top:2%;width:5.65%;height:17.5%;z-index:5;"
+      onclick="deskCarKey()" title="Car Key" alt="" draggable="false">
+
+    <!-- Letter slots (draggable) -->
+    <img class="draggable" id="desk-letter1" src="desk--UI/detective-ui-prop-letter-transparent.png"
+      style="left:42%;top:48%;width:11.7%;z-index:10;display:none;" title="Letter" alt="" draggable="false">
+    <img class="draggable" id="desk-letter2" src="desk--UI/detective-ui-prop-letter-transparent.png"
+      style="left:42%;top:70%;width:11.7%;z-index:10;display:none;" title="Letter" alt="" draggable="false">
+    <!-- Photo -->
+    <img class="draggable" id="desk-photo" src="desk--UI/detective-ui-prop-photo-placeholder-transparent.png"
+      style="left:55%;top:48%;width:9.8%;z-index:10;" title="Photograph" alt="" draggable="false">
+    <!-- Evidence board -->
+    <img class="prop" src="desk--UI/detective-ui-prop-evidence-board-blank-transparent.png"
+      style="left:82%;top:51.5%;width:18%;z-index:8;"
+      onclick="deskEvidenceBoard()"
+      title="Evidence Board" alt="" draggable="false">
+    <div id="ev-icons"></div>
+    <div id="ev-popup"></div>
+  </div>
+</div>
+
+<!-- PRINTING SCREEN -->
+<div id="printing-wrap">
+  <div class="scene" id="printing-scene">
+    <img class="scene-bg" src="printing/printing-bg.png" alt="" draggable="false">
+    <div class="printing-frame">
+      <div class="printing-msg" id="printing-msg"></div>
+      <div class="printing-spinner">
+        <div class="ps-blk"></div><div class="ps-blk"></div><div class="ps-blk"></div>
+        <div class="ps-blk"></div><div class="ps-blk"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════
+   AUDIO — background music + sound effects
+══════════════════════════════════════════════════════════════ */
+const MUSIC={
+  start:'musics/startingpage+morning scenes.mp3',
+  factcheck:'musics/factcheckpage.mp3',
+  field:'musics/field research page.mp3',
+  result:'musics/resultpage.mp3',
+};
+const SFX={
+  click:'soundeffect/click-on any object.mp3',
+  page:'soundeffect/click-on-letter-note-photo.mp3',
+  magnifier:'soundeffect/click-on-magnifier.mp3',
+  publish:'soundeffect/publish.mp3',
+  notpublish:'soundeffect/not-publish.mp3',
+  switch:'soundeffect/switch-setting.mp3',
+  carkey:'soundeffect/carkey.mp3',
+  scissor:'soundeffect/scissor.mp3',
+  map:'soundeffect/click-on-letter-note-photo.mp3',
+};
+let bgmAudio=null,bgmKey=null,audioMuted=false;
+function setMusic(key){
+  if(!MUSIC[key]||audioMuted&&bgmKey===key)return;
+  if(bgmKey===key)return;
+  bgmKey=key;
+  if(bgmAudio){try{bgmAudio.pause();}catch(e){}}
+  const a=new Audio(MUSIC[key]);
+  a.loop=true;a.volume=audioMuted?0:0.45;
+  bgmAudio=a;
+  if(!audioMuted)a.play().catch(()=>{});
+}
+function playSfx(key){
+  if(audioMuted)return;
+  const src=SFX[key];if(!src)return;
+  const a=new Audio(src);a.volume=0.75;a.play().catch(()=>{});
+}
+function toggleMute(){
+  const wasMuted=audioMuted;
+  audioMuted=!audioMuted;
+  if(wasMuted)playSfx('switch');
+  const el=document.getElementById('sb-mute');
+  if(el)el.innerHTML=audioMuted?'&#128263;':'&#128266;';
+  if(bgmAudio)bgmAudio.volume=audioMuted?0:0.45;
+}
+document.addEventListener('click',()=>{
+  if(!audioMuted&&bgmAudio&&bgmAudio.paused)bgmAudio.play().catch(()=>{});
+},true);
+
+/* ══════════════════════════════════════════════════════════════
+   GAME DATA
+══════════════════════════════════════════════════════════════ */
+const GD = {
+
+// Shown on the printing screen between the day's decisions and the
+// results reveal. One per day, cryptic and a little unsettling.
+PRINTING_MESSAGES:{
+  1:"The presses learn tonight what tomorrow will believe.",
+  2:"Somewhere a drum turns, and a city wakes up changed.",
+  3:"Ink dries slower than the truth it's asked to hold.",
+  4:"The machine does not ask what you saw. Only what you wrote.",
+  5:"Tonight the rollers strain — some words weigh more than others.",
+  6:"The last edition is already written. You are only catching up to it.",
+  default:"Tomorrow's edition is taking shape...",
+},
+
+// Cases where the desk photo actually shows something (i.e. the
+// magnifier reveals real evidence in deskMagnifier()). Every other
+// case has no case-relevant photo, so the photo prop is hidden.
+PHOTO_CASES:['D2C1','D4C1'],
+CASE_PHOTOS:{
+  D2C1:'case-photos/D2C1-evidence-photo.png',
+  D4C1:'case-photos/D4C1-ship-covered.png',
+},
+CASE_PHOTOS_MAGNIFIED:{
+  D4C1:'case-photos/D4C1-ship-revealed.png',
+},
+
+CASES:{
+  D1C1:{title:"The Masked Vigilante of the Night",day:1,min_evidence:2},
+  D1C2:{title:"Aliens Sighted in the Mountain Village",day:1,min_evidence:2},
+  D2C1:{title:"The Novelist in Peril",day:2,min_evidence:4},
+  D2C2:{title:"The Defector",day:2,min_evidence:2},
+  D2C3:{title:"The Alien Yeast Bribe",day:2,min_evidence:0,condition:"alien_published_d1"},
+  D3C1:{title:"Tang's Field Visit Request",day:3,min_evidence:2},
+  D3C2:{title:"The Reunification Society",day:3,min_evidence:3},
+  D4C1:{title:"The Midnight Ship",day:4,min_evidence:4},
+  D5C1:{title:"Vodrenian Diplomatic Frame-Up",day:5,min_evidence:3},
+  D5C2:{title:"The Bakery Owner's Plea",day:5,min_evidence:1},
+  D6C1:{title:"Tang's Final Invitation",day:6,min_evidence:3},
+},
+
+CONTACT_AVAILABILITY:{
+  1:{D1C1:["Port Callah Police HQ","Donald Croft"],
+     D1C2:["City Hall Liaison Office","Port Callah Police HQ","Village Chief","Free Port Technology Bureau","Tang"]},
+  2:{D2C1:["Port Callah Police HQ","Port Callah Hospital","Lulu Qi"],
+     D2C2:["Lucas Marsh","Sorengardi Mutual Aid Org"],
+     D2C3:["Thomas Finch"]},
+  3:{D3C1:["Weather & Geologic Bureau","Village Chief","City Hall Liaison Office"],
+     D3C2:["Reunification Society Spokesperson","City Hall Economic Advisor"]},
+  4:{D4C1:["City Hall Liaison Office","Municipal Harbor Bureau"]},
+  5:{D5C1:["Arthur Pendelton","Gavin Ross","Municipal Harbor Bureau","Vodrenian Diplomatic Office"],
+     D5C2:["Thomas Finch"]},
+  6:{D6C1:["Tang"]},
+},
+
+CONTACT_LINES:{
+  "Port Callah Police HQ_1_D1C1":[
+    {text:"Yeah, Ledger? Let me pull the sheet for Incident 10-02.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"A caller on the South Side claimed a shadow swept over his roof gables.",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+    {text:"Look, kid — every drunkard is throwing firecrackers or seeing Vodrenian spies.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"We ran a cruiser through the grid, found nothing but empty fish crates. Don't go printing an invasion panic.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Donald Croft_1_D1C1":[
+    {text:"I swear it was real, sir.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+    {text:"The Masked Hero saved my telescope — the thugs were tied up and dumped nearby. All I saw was a cape with sharp corners.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+  ],
+  "City Hall Liaison Office_1_D1C2":[
+    {text:"The administration holds absolutely no records of anomalous activities.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+    {text:"We strongly advise your editor against wasting print blocks on unstable freelance submissions during a sensitive national holiday.",tag:"Neutral",tier:"",score:0,sets_flag:"warned_off_alien_story"},
+    {text:"Keep the front page focused on the civic parade banners, shall we?",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Village Chief_1_D1C2_warned":[
+    {text:"Aliens? What kind of city garbage question is that? I don't know anything about aliens! Everything is normal here!",tag:"Con",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Village Chief_1_D1C2_default":[
+    {text:"Oh, old Tang? Aye, that lunatic was tramping through my turnip fields last week with a copper rod.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"The weather up here has been thick since our grandparents built the stone walls. Terrain fog, year-round.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"I'll make sure he doesn't trip down a mine shaft, but there's no spaceships here.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Port Callah Police HQ_1_D1C2":[
+    {text:"Tang's dog is barking in Morse code again?",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"Hang up the phone, reporter. We deal with real ordinance, not loose screws.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Free Port Technology Bureau_1_D1C2":[
+    {text:"This is Chief Engineer Ross. You are asking if a cathode-ray TV displaying blank static can reveal geographic coordinates? This is not mathematically possible.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+    {text:"Television snow is simply unmodulated atmospheric noise. It is a lack of data, not a map.",tag:"Con",tier:"E3",score:3,sets_flag:""},
+  ],
+  "Tang_1_D1C2":[
+    {text:"'It's all in my letter — the coordinates don't lie. The static pattern, the dog, all of it. I stand by every word.'",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"'I have no photograph and no witness account — only my own interpretation. But I believe what I saw.'",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Port Callah Police HQ_2_D2C1":[
+    {text:"We have zero active missing persons files or kidnapping warrants filed under the name Wright, Jonathan.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+    {text:"If a fiction writer misses his deadline, that's a problem for his publisher, not us.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Port Callah Hospital_2_D2C1":[
+    {text:"Pharmacy Records. Let me check...",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"Yes — we have a verified physical signature for Jonathan Wright dated exactly six days ago. He collected his standard Laudanum prescription. He certainly wasn't missing.",tag:"Con",tier:"E3",score:3,sets_flag:""},
+  ],
+  "Lulu Qi_2_D2C1":[
+    {text:"Why isn't my letter on the front page yet? Jonathan is a national treasure! I saw those masked men drag him toward a black sedan with my own eyes!",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+  ],
+  "C.I._2_D2C1":[
+    {text:"(₵5) No street-level intel on any Wright kidnapping — and I know what's moving through this city. Nothing.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Lucas Marsh_2_D2C2":[
+    {text:"My history is accurate. I spent two years dodging border patrols before I slipped onto a southern oil boat.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+    {text:"If Vodrenia takes this port back, people like me won't just lose our jobs — we will be lined up against the harbor wall.",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Sorengardi Mutual Aid Org_2_D2C2":[
+    {text:"Yes, Lucas Marsh is on our aid distribution roll. He is a very good speaker for our fundraising dinners.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+    {text:"But off the record — these defectors understand that a more dramatic escape narrative guarantees higher contributions from Western donors.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+  ],
+  "C.I._2_D2C2":[
+    {text:"(₵5) Word on the street is the 'Independence Front' crowd has been scouting for defectors to pen these memory-lane essays — and the pay is pretty sweet.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Thomas Finch_2_D2C3":[
+    {text:"You read my note? Great! Looking forward to our collaboration. I'll pay ₵12 to promote my bakery's 'extraterrestrial' yeast — apparently it aids digestion and promotes weight loss.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Weather & Geologic Bureau_3_D3C1":[
+    {text:"When you wedge a sharp mountain range next to the sea, you get classic terrain fog and a stubborn temperature inversion. It happens all over the globe.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Village Chief_3_D3C1":[
+    {text:"Beats me why the fog never clears up — if you want the real local scoop, you're much better off knocking on the villagers' doors directly.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "City Hall Liaison Office_3_D3C1":[
+    {text:"Shouldn't your paper be focusing on things that actually matter to this city?",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Reunification Society Spokesperson_3_D3C2_default":[
+    {text:"Look out your newsroom window. Independence sounds incredibly romantic until you actually try to buy groceries. We're just neighbors who want our stable, comfortable lives back.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Reunification Society Spokesperson_3_D3C2_ci_first":[
+    {text:"Oh, come on! We're staring down a massive border crisis, and your big scoop is checking our petty cash receipts?",tag:"Pro",tier:"",score:0,sets_flag:""},
+    {text:"Let's focus on the real headline: unification with Vodrenia can actually save our economy.",tag:"Pro",tier:"",score:0,sets_flag:""},
+  ],
+  "C.I._3_D3C2":[
+    {text:"(₵5, +1 Pressure) Word on the boardwalk is their entire operating budget gets quietly wired in from a chamber of commerce account over in Vodrenia. Treat it as a rumor — it's definitely not hard evidence.",tag:"Con",tier:"E1",score:1,sets_flag:"asked_CI_before_reunification"},
+  ],
+  "City Hall Economic Advisor_3_D3C2":[
+    {text:"Talk about textbook cherry-picking! Trust their welfare data only if those are the only cities ever ruled by Vodrenia.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+  ],
+  "City Hall Liaison Office_4_D4C1_no_magnifier":[
+    {text:"Oh, that? The cooler night air is simply much better for transporting produce so the cargo doesn't spoil in the holds.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+  ],
+  "City Hall Liaison Office_4_D4C1_magnifier":[
+    {text:"Alright, look... I knew we couldn't keep your paper's curiosity at bay forever. There's truth to it. But I am begging you to hold off — this program exists to protect Port Callah's independence.",tag:"Pro",tier:"E3",score:3,sets_flag:"offered_bribe_military"},
+    {text:"Let me wire some 'research funds' to your account. Just let it sit for a bit, will you? (₵8 transferred.)",tag:"Pro",tier:"E2",score:2,sets_flag:"offered_bribe_military"},
+  ],
+  "Municipal Harbor Bureau_4_D4C1":[
+    {text:"Honestly, friend, your guess is as good as ours. For the past week we just watch the ships come and go blindly.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"If you want actual details, you'll have to knock on the government's doors.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Arthur Pendelton_5_D5C1":[
+    {text:"They rammed us on purpose, reporter! I know what the official radar logs say, but that Vodrenian warship veered straight into our hull.",tag:"Con",tier:"E1",score:1,sets_flag:""},
+    {text:"They didn't even throw down a single life ring while our boys were screaming in the freezing water. They laughed and called us 'stateless dock rats'!",tag:"Con",tier:"E1",score:1,sets_flag:""},
+    {text:"What were we carrying? The cargo master kept the security hatches locked tight. But we didn't deserve to be left to drown.",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Gavin Ross_5_D5C1":[
+    {text:"I never want to live that dangerously again...",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"Sinking down into that pitch-black, ice-cold water — no money is enough to buy me to do this again.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+  ],
+  "Municipal Harbor Bureau_5_D5C1":[
+    {text:"A small cargo craft loaded with anniversary fireworks was intercepted and held by a Vodrenian patrol boat before they finally let it go.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+    {text:"Our rescue crews noted something irregular — when that cargo transport caught fire, it didn't smell like standard wood or dry goods. It had a strange, sharp, chemical stink.",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Vodrenian Diplomatic Office_5_D5C1":[
+    {text:"The ship was never a festival cargo run — it was a major international drug-smuggling operation, moving highly addictive laudanum during the chaos of Anniversary Week customs. We opened fire only to protect Port Callah's own citizens.",tag:"Con",tier:"E2",score:2,sets_flag:""},
+    {text:"This ship's registration was never recognized by Vodrenia — since Port Callah's 'independence' was never recognized either, its shipping documents carry no legal weight.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "C.I._5_D5C1":[
+    {text:"(₵5, +1 Pressure) This kind of hustle happens every year. Everyone knows harbor inspections get incredibly lax during the anniversary celebrations.",tag:"Pro",tier:"E1",score:1,sets_flag:""},
+    {text:"Honestly, it will be sad for me to see the credibility of the government collapse. God knows how much work I did for their 'little plan'.",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+  "Thomas Finch_5_D5C2":[
+    {text:"My imported flour has been seized under a 'customs review' and my shop is about to be ruined beyond all recovery!",tag:"Neutral",tier:"",score:0,sets_flag:""},
+    {text:"Here — here's the so-called 'alien bread' ingredient list. Entirely ordinary baking staples. No 'extraterrestrial yeast' anywhere on it. Vodrenia is obstructing me without real cause.",tag:"Pro",tier:"E2",score:2,sets_flag:""},
+  ],
+  "Tang_6_D6C1":[
+    {text:"It told me something, I think. About why it's here. Let me try to explain it properly. (Field visit — dialogue mini-game begins.)",tag:"Neutral",tier:"",score:0,sets_flag:""},
+  ],
+},
+
+CASE_LETTERS:{
+  1:[
+    {sender:"Donald Croft",case_id:"D1C1",flag:"",lines:[
+      {text:"I was up on my own roof stargazing last night when a few thugs knocked me out cold. When I woke up, my telescope was untouched — and the thugs themselves were tied up and dumped nearby.",tag:"Pro",tier:"E1",score:1,source:"Croft_letter_M001"},
+      {text:"All I saw was a cape with sharp, pointed corners disappearing into the night. I just hope the paper can shine a light on this kind of good, brave behavior.",tag:"Neutral",tier:"",score:0,source:"Croft_letter_M002"},
+    ]},
+    {sender:"Tang (Freelance Writer)",case_id:"D1C2",flag:"",lines:[
+      {text:"The static pattern on my television set points to coordinates in the mountain village northeast of the city. I believe there is alien activity there.",tag:"Con",tier:"E1",score:1,source:"Tang_letter_M003"},
+      {text:"My dog's barking pattern lately sounds like Morse code, and decoding it gives the same coordinates.",tag:"Con",tier:"E1",score:1,source:"Tang_letter_M004"},
+      {text:"I have no photograph and no witness account — only my own interpretation.",tag:"Neutral",tier:"",score:0,source:"Tang_letter_M005"},
+      {text:"You're a smart person. I believe you'll make the right call here.",tag:"Neutral",tier:"",score:0,source:"Tang_letter_M006"},
+    ]},
+  ],
+  2:[
+    {sender:"Lulu Qi (Private Investigator)",case_id:"D2C1",flag:"",lines:[
+      {text:"I am a private investigator, and I am asking the Ledger to help save the mystery novelist Jonathan Wright.",tag:"Neutral",tier:"",score:0,source:"Lulu_letter_M007"},
+      {text:"Wright vanished a month ago, right before his new book was due out. I am an eyewitness — I saw him dragged away by masked men while taking out the trash.",tag:"Pro",tier:"E2",score:2,source:"Lulu_letter_M008"},
+    ]},
+    {sender:"Margaret Wright (Jonathan's wife)",case_id:"D2C1",flag:"",lines:[
+      {text:"My husband suffers from severe nervous exhaustion and insomnia, and visits Port Callah Hospital every week for medication.",tag:"Pro",tier:"E2",score:2,source:"Wright_wife_M009"},
+      {text:"Our son keeps asking where his father is. Jonathan is the one who holds this family together.",tag:"Neutral",tier:"",score:0,source:"Wright_wife_M010"},
+    ]},
+    {sender:"Lucas Marsh",case_id:"D2C2",flag:"",lines:[
+      {text:"My history is accurate, sir. I spent two years dodging border patrols before I slipped onto a southern oil boat.",tag:"Pro",tier:"E1",score:1,source:"Marsh_letter_M028a"},
+      {text:"If Vodrenia takes this port back, people like me won't just lose our jobs — we will be lined up against the harbor wall. I wrote the essay because our freedom here is fragile, and the people are forgetting the cost.",tag:"Pro",tier:"E2",score:2,source:"Marsh_letter_M028b"},
+    ]},
+    {sender:"Thomas Finch (Bakery Owner)",case_id:"D2C3",flag:"alien_published_d1",lines:[
+      {text:"I'd like to pay the Ledger ₵12 to help promote my bakery's new 'extraterrestrial yeast' — folks say it aids digestion and helps you slim down. Just a friendly business proposal.",tag:"Neutral",tier:"",score:0,source:"Finch_letter_bribe"},
+    ]},
+  ],
+  3:[
+    {sender:"Tang",case_id:"D3C1",flag:"",lines:[
+      {text:"Tang still believes the mountain fog is caused by alien activity and asks you to come see the village in person. He is arranging a field visit for today.",tag:"Neutral",tier:"",score:0,source:"Tang_letter_M012"},
+    ]},
+    {sender:"Port Callah Reunification Society (public statement)",case_id:"D3C2",flag:"",lines:[
+      {text:"We call for a peaceful reunification with the Northern Kingdom. Independence has brought nothing but economic hardship — prices climbing, jobs vanishing — while the North offers proven, superior welfare for its citizens.",tag:"Pro",tier:"E1",score:1,source:"Reunification_statement_M013a"},
+      {text:"Let us be clear: the East has never truly recognized Port Callah's independence. We would rather negotiate our future from a position of honesty than cling to a status the East itself refuses to acknowledge.",tag:"Pro",tier:"E2",score:2,source:"Reunification_statement_M013b"},
+    ]},
+  ],
+  4:[
+    {sender:"Concerned Citizen",case_id:"D4C1",flag:"",lines:[
+      {text:"Every night a Vodrenia-flagged ship docks at the harbor with noise that keeps me awake. (Photo enclosed: a ship moored at the dock, hull bearing a registration number, cargo logged as produce.)",tag:"Pro",tier:"E1",score:1,source:"citizen_complaint_M014"},
+      {text:"I just got my baby down and then the steam roar from the harbor wakes them right back up every single night.",tag:"Neutral",tier:"",score:0,source:"housewife_M015"},
+    ]},
+    {sender:"Anonymous (muddy note, slipped under door)",case_id:"D4C1",flag:"talked_to_flower_villager_about_ships",lines:[
+      {text:"That ship's paint job is wrong. I know what I saw. — A friend.",tag:"Pro",tier:"E2",score:2,source:"anon_note_M016"},
+    ]},
+  ],
+  5:[
+    {sender:"Vodrenian Diplomatic Office (official statement)",case_id:"D5C1",flag:"",lines:[
+      {text:"The ship that collided with our warship was never a festival cargo run — it was a major international drug-smuggling operation. We opened fire only to protect Port Callah's own citizens.",tag:"Con",tier:"E2",score:2,source:"Vodrenia_statement_M017"},
+      {text:"This ship's registration was never recognized by Vodrenia — since Port Callah's 'independence' was never recognized either, its shipping documents carry no legal weight.",tag:"Neutral",tier:"",score:0,source:"Vodrenia_statement_M018"},
+    ]},
+    {sender:"Thomas Finch",case_id:"D5C2",flag:"",lines:[
+      {text:"My imported flour has been seized under a 'customs review' and my shop is about to be ruined beyond all recovery!",tag:"Neutral",tier:"",score:0,source:"Finch_letter_M019"},
+      {text:"He provides the so-called 'alien bread' ingredient list — entirely ordinary baking staples, no 'extraterrestrial yeast' anywhere on it — as proof Vodrenia is obstructing him without real cause.",tag:"Pro",tier:"E2",score:2,source:"Finch_ingredient_list_M020"},
+    ]},
+  ],
+  6:[
+    {sender:"Tang",case_id:"D6C1",flag:"",lines:[
+      {text:"I mean it this time — I really saw it. Bring your camera. Meet me at Wendell's gate like before.",tag:"Neutral",tier:"",score:0,source:"Tang_letter_M021"},
+    ]},
+  ],
+},
+
+POLICE_BLOTTER_EVIDENCE:{
+  1:[{text:"A shadow swept across the sky over a South Quarter rooftop at 2:00 a.m. on October 10, while the witness was stargazing.",tag:"Pro",tier:"E1",score:1,source:"blotter_D1_shadow",case_id:"D1C1"}],
+  2:[{text:"No kidnapping or missing persons file on record under Wright, Jonathan. Hospital records show him collecting a prescription Oct 5th (in-person signature on file).",tag:"Con",tier:"E1",score:1,source:"blotter_D2_wright",case_id:"D2C1"}],
+  3:[],
+  4:[
+    {text:"A collision between a Vodrenian warship and a local cargo vessel was logged at the eastern breakwater at 12:15 a.m. on October 13.",tag:"Pro",tier:"E1",score:1,source:"blotter_D4_collision",case_id:"D4C1"},
+    {text:"Two surviving crewmen from the October 13 collision were admitted to Port Callah Hospital at 6:00 a.m.",tag:"Pro",tier:"E1",score:1,source:"blotter_D4_crewmen",case_id:"D5C1"},
+  ],
+  5:[{text:"Collision between cargo vessel and Vodrenian patrol boat confirmed. Two sailors rescued. Search for additional crew members ongoing. Cause of collision under review.",tag:"Pro",tier:"E1",score:1,source:"blotter_D5_collision",case_id:"D5C1"}],
+  6:[],
+},
+
+BLOTTER_TEXTS:{
+  1:"Oct 10 — Incident 10-02: A caller on the South Side claimed a shadow swept over his roof gables. Patrol found nothing but empty fish crates.",
+  2:"Oct 11 — No kidnapping or missing persons file on record under Wright, Jonathan. Hospital records show him collecting a prescription Oct 5th (in-person signature on file).",
+  3:"Oct 12 — Noise complaints filed from residents near North Cove regarding late-night vessel activity. No violations cited.",
+  4:"Oct 13 — Harbor Bureau reports: an unusual number of Vodrenia-flagged vessels have docked after midnight this week. No violations cited. Harbor routine inspections operating normally.",
+  5:"Oct 14 — Collision between cargo vessel and Vodrenian patrol boat. Two sailors rescued. Search for additional crew members is ongoing. Cause of collision under review.",
+},
+
+EDITOR_MEMOS:{
+  1:"Welcome to the Callah Morning Ledger. Independence Anniversary Week has just begun. You have four actions today — use them wisely. Check your mail, then get to work.<br><br>— A note on the scissors —<br>When you spot a promising line in a document, press <strong>C</strong> to arm the scissors, then click the underlined text to cut it out as evidence. Press <strong>V</strong> to put the scissors away if you change your mind.<br><br>Click any piece of evidence on your desk to see how strong it is: <strong style='color:#44aa44'>green</strong> marks it as a PRO (supports your case), <strong style='color:#cc3333'>red</strong> marks it as a CON (undermines it). Weigh both before you decide what to publish.",
+  2:"Two stories in today — the novelist situation and the defector letter. The hospital ordinance on the back page may be relevant. Keep your evidence standards up.",
+  3:"Tang is asking you to the village again. Meanwhile, the Reunification Society has made a public statement. Four actions — split them carefully.",
+  4:"Lots of noise about midnight ships. Look into it properly. And whatever you find, make sure you have the evidence to back it up.",
+  5:"The Vodrenia situation is getting serious. We have two stories competing for the front page. What you lead with today will shape how the city reads this.",
+  6:"Tang is at it again. Last day before Independence Day itself. Make it count.",
+},
+
+GOVT_NOTICES:{
+  2:"The Port Callah Administration has enacted the Prohibited Drugs and Psychotropic Substances Control Ordinance. All clinics are prohibited from dispensing prescriptions exceeding seven days.",
+  4:"The Port Callah Food Safety Bureau reminds all citizens: cooler night air is optimal for transporting perishable produce. Night markets will extend their hours this week.",
+  5:"(Wire service) Fireworks for the Independence Anniversary celebrations were approved by the Harbor Bureau. All shipping documentation has been verified.",
+},
+
+OUTCOMES:{
+  D1C1_publish:{headline:"SEARCH FOR THE 'HORNED HERO': LOCAL ASTRONOMER DEMANDS FACE-TO-FACE MEETING TO THANK CAPED VIGILANTE!",body:"A massive bakery craze has taken over the streets. Local confectioneries are reporting an unprecedented rush for the newly released 'Vigilante Horn' pastry.",credibility:8,pressure:0,stability:5,sets_flags:{case_1_killed:false},axis:{a:0,b:1,c:0}},
+  D1C1_suppress:{headline:"(no headline — story never ran)",body:"The vigilante resurfaces in the North Side the next day, in a rival paper, with the credit flipped.",credibility:-4,pressure:-1,stability:1,sets_flags:{case_1_killed:true},axis:{a:0,b:-1,c:0}},
+  D1C2_publish:{headline:"EGG-CELLENT PROFITS IN 'ALIEN VILLAGE' AS TOURISTS FLOOD REMOTE OUTPOST, TURN IT INTO CIVIC JOKE!",body:"Once-empty roads to the northeast have been jammed since dawn with day-trippers hunting for a glimpse of 'the visitors.' Village vendors report record tea-egg sales.",credibility:-6,pressure:-1,stability:6,sets_flags:{alien_published_d1:true,case_2_killed:false},axis:{a:-1,b:1,c:0}},
+  D1C2_suppress_official_first:{headline:"SLEEPLESS IN THE NORTHEAST: CIVIC PETITIONS EXPLODE AS MIDNIGHT CARGO FREQUENCY SPIKES!",body:"The Free Port Administration reminds all citizens that the integrity of our Independence Anniversary Week depends on your disciplined adherence to empirical fact.",credibility:-2,pressure:1,stability:-1,sets_flags:{case_2_killed:true},axis:{a:0,b:-1,c:0}},
+  D1C2_suppress_chief_first:{headline:"(no headline)",body:"A villager sends in an unremarkable follow-up letter. Nothing else happens.",credibility:-1,pressure:0,stability:0,sets_flags:{case_2_killed:true},axis:{a:0,b:-1,c:0}},
+  D2C1_publish:{headline:"ABDUCTED FOR THE TRUTH? RENOWNED AUTHOR JONATHAN WRIGHT VANISHES AFTER CRITICIZING NORTHERN FREIGHT LINES!",body:"A bombshell report out of Port Callah this morning. The paper's investigation reveals troubling circumstances surrounding the disappearance of novelist Jonathan Wright. (NOTE: This story will reverse tomorrow.)",credibility:10,pressure:3,stability:-3,sets_flags:{wright_story_published:true},axis:{a:-1,b:1,c:1}},
+  D2C1_reversal:{headline:"THE LATEST CHAPTER: AUTHOR JONATHAN WRIGHT BREAKS SILENCE ON 'THE ABDUCTION' HOAX",body:"'Have you seen my royalty statements lately? Nobody cares about suspense anymore — they care about scandals. I figured if I was 'taken' for criticizing the Northern shipping lanes, I'd be a martyr and my backlist would sell out. I didn't think the papers would be quite so gullible.'",credibility:-12,pressure:0,stability:-2,sets_flags:{},axis:{a:0,b:0,c:0}},
+  D2C1_suppress:{headline:"A CALL FOR VERIFICATION AMIDST RISING URBAN RUMORS",body:"While various unsubstantiated rumors concerning the whereabouts of local author Jonathan Wright circulate, the Callah Morning Ledger reminds readers that unverified eyewitness accounts do not meet our threshold for professional reporting.",credibility:2,pressure:0,stability:0,sets_flags:{},axis:{a:1,b:-1,c:0}},
+  D2C2_publish:{headline:"'THE PRICE OF FREEDOM': LUCAS VANCE'S HARROWING JOURNEY FROM A NORTHERN BORDER TOWN TO CALLAH'S DOCKS",body:"The Independence Anniversary has evolved into a powerful demonstration of identity. Residents are flooding the plazas, singing traditional anthems, and pinning white ribbons to their clothes.",credibility:3,pressure:3,stability:4,sets_flags:{},axis:{a:0,b:1,c:1}},
+  D2C2_suppress:{headline:"(no headline)",body:"In a grand gesture of goodwill, the Northern Consulate has announced a generous donation of state-grade fireworks.",credibility:-1,pressure:-1,stability:-2,sets_flags:{},axis:{a:0,b:-1,c:0}},
+  D2C3_accept_publish:{headline:"OUT OF THIS WORLD APPETITE: BAKERY'S 'ALIEN YEAST' LOAF SELLING OUT CITYWIDE",body:"Customers really did lose weight — or so they believe. Either way, the bakery's business is booming.",credibility:6,pressure:0,stability:2,sets_flags:{d2c3_published:true,alien_bread_bribe_accepted:true},axis:{a:-1,b:1,c:1}},
+  D2C3_decline:{headline:"(no headline)",body:"You declined Thomas Finch's offer. No story runs.",credibility:0,pressure:0,stability:0,sets_flags:{alien_bread_bribe_accepted:false},axis:{a:1,b:0,c:-1}},
+  D3C1_publish:{headline:"MISTS OF THE NORTHEAST: A FIRST-HAND ACCOUNT OF LIFE UNDER THE BREATHING CLOUDS",body:"The line outside the bakery now wraps around the block before dawn. Whether it is a genuine biological phenomenon or collective psychosomatic response, the results are undeniable.",credibility:-2,pressure:0,stability:3,sets_flags:{d3c1_published:true},axis:{a:-1,b:1,c:0}},
+  D3C1_suppress:{headline:"(no headline)",body:"The village material stays in your notes. It may be useful later.",credibility:0,pressure:0,stability:0,sets_flags:{d3c1_published:false},axis:{a:0,b:-1,c:0}},
+  D3C2_publish_funding:{headline:"ROMANCE OF THE HOMELAND? REUNIFICATION SOCIETY'S BOOKS DON'T ADD UP",body:"An informal review of the Port Callah Reunification Society's public ledger turns up expense patterns hard to square with their modest donation drives.",credibility:5,pressure:1,stability:1,sets_flags:{reunification_funding_exposed:true,d3c2_published:true},axis:{a:1,b:1,c:0}},
+  D3C2_publish_sympathetic:{headline:"'WE JUST WANT OUR GROCERIES TO BE AFFORDABLE AGAIN': INSIDE THE REUNIFICATION MOVEMENT",body:"Readers wrote in by the dozen, several sharing their own struggles from the rocky years right after Independence.",credibility:2,pressure:3,stability:-4,sets_flags:{d3c2_published:true},axis:{a:-1,b:1,c:1}},
+  D3C2_suppress:{headline:"(no headline — story never ran)",body:"The Society starts handing out flyers on its own, claiming the Ledger 'silenced' them — and gets more attention than the interview would have given it.",credibility:-2,pressure:0,stability:-1,sets_flags:{d3c2_published:false},axis:{a:0,b:-1,c:0}},
+  D4C1_publish_no_evidence:{headline:"MYSTERY VEGETABLES: LEDGER REPORTS ON LATE-NIGHT BROCCOLI SHIPMENTS, READERS LEFT CONFUSED",body:"Without anything resembling proof of what the cargo actually is, the story lands flat. 'Why would Sorengard sneak broccoli into port at midnight?' one letter asked. 'Is this a metaphor?' asked another.",credibility:-3,pressure:0,stability:0,sets_flags:{d4c1_published:true},axis:{a:-1,b:1,c:0}},
+  D4C1_suppress:{headline:"(no headline — story never ran)",body:"The food safety advisory about night transport of produce runs regardless in the back pages.",credibility:-1,pressure:0,stability:0,sets_flags:{d4c1_published:false},axis:{a:0,b:-1,c:0}},
+  D4C1_comply:{headline:"(no reporting today)",body:"You agreed to stay silent about what you glimpsed. Work continues as normal — you can never publish anything about this specific incident, but you keep working the rest of the week.",credibility:0,pressure:0,stability:0,sets_flags:{detained_d4:false,complies_with_silence:true},axis:{a:0,b:-1,c:0}},
+  D4C1_refuse:{headline:"(no reporting today)",body:"You refused to comply. You are confined to your home until the last day of Independence Anniversary Week.",credibility:0,pressure:0,stability:0,sets_flags:{detained_d4:true,complies_with_silence:false},axis:{a:0,b:1,c:0}},
+  D4C1_forced_day_off:{headline:"(no reporting today — wire-service filler ran instead)",body:"Having published all three alien-related stories, the editor concludes you've been bought off by the bakery. Forced day off.",credibility:0,pressure:0,stability:-1,sets_flags:{},axis:{a:0,b:0,c:0}},
+  D5C1_publish_drugs:{headline:"'WERE OUR OWN SAILORS RUNNING DRUGS?': LEDGER WEIGHS VODRENIA'S CLAIM",body:"Readers begin asking the uncomfortable question themselves rather than rioting. The unrest defuses — not because anyone feels good about it, but because confusion has replaced certainty.",credibility:5,pressure:-2,stability:5,sets_flags:{d5c1_published:true,d5c1_angle_drugs:true},axis:{a:1,b:1,c:0}},
+  D5C1_publish_sailors:{headline:"'THEY CALLED US DOCK RATS': SURVIVORS DISPUTE VODRENIA'S ACCOUNT",body:"Public anger flares immediately — but without anything to keep feeding it, the outrage burns off within a day or two.",credibility:3,pressure:-1,stability:1,sets_flags:{d5c1_published:true,d5c1_angle_sailors:true},axis:{a:0,b:1,c:1}},
+  D5C1_suppress:{headline:"(no headline)",body:"The bakery distributes relief bread; prior anger temporarily cools in the face of free food.",credibility:-1,pressure:0,stability:2,sets_flags:{d5c1_published:false},axis:{a:0,b:-1,c:0}},
+  D5C2_publish_with_sailors:{headline:"THE FLOUR THAT WASN'T THERE: BAKERY OWNER SAYS VODRENIA IS STARVING HIS OVENS OUT OF SPITE",body:"Thomas Finch's ingredient list makes the flour seizure look exactly as petty as it is. Combined with yesterday's sailor story, the public's anger now has a second, more relatable face.",credibility:4,pressure:-2,stability:3,sets_flags:{d5c2_published:true},axis:{a:1,b:1,c:0}},
+  D5C2_publish_with_drugs:{headline:"BREAD, BROCCOLI, AND BUREAUCRACY: A WEEK NOBODY ASKED FOR",body:"Coming one day after the drug-cargo story, Thomas Finch's outraged letter about flour lands less like an injustice and more like a punchline. The bakery, predictably, sells out again by noon.",credibility:2,pressure:-3,stability:4,sets_flags:{d5c2_published:true},axis:{a:0,b:1,c:0}},
+  D5C2_publish_alone:{headline:"BAKERY OWNER ACCUSES VODRENIA OF PETTY FLOUR SEIZURE",body:"Without the ship story to give it context, Thomas Finch's complaint reads as an isolated grievance — sympathetic, a little funny, but not connected to anything larger.",credibility:1,pressure:0,stability:1,sets_flags:{d5c2_published:true},axis:{a:0,b:1,c:0}},
+  D5C2_suppress:{headline:"(no headline)",body:"No story runs for D5C2.",credibility:0,pressure:0,stability:0,sets_flags:{d5c2_published:false},axis:{a:0,b:-1,c:0}},
+  D6C1_tang_photo:{headline:"WHAT DID THE CAMERA CATCH? FREELANCE WRITER'S BLURRY ENCOUNTER REIGNITES NORTHEAST MYSTERY",body:"The photograph shows Tang standing alone in heavy fog, a soft white blur at his shoulder that could be overexposure, camera flash on mist, or — as Tang insists — something else entirely.",credibility:4,pressure:2,stability:3,sets_flags:{d6c1_published:true},axis:{a:-1,b:1,c:1}},
+  D6C1_radiation_sympathetic:{headline:"A CITY'S QUIET BURDEN: WHY PORT CALLAH MAY HAVE BUILT WHAT IT BUILT",body:"If confirmed, residents seem inclined to read this less as betrayal than as a hard, private decision a young independence forced on its government. 'We'd have done the same,' one resident told this paper.",credibility:2,pressure:1,stability:6,sets_flags:{d6c1_published:true},axis:{a:-1.5,b:1.5,c:-1.5}},
+  D6C1_radiation_accountability:{headline:"BURIED IN THE FOG: WHAT THE GOVERNMENT NEVER TOLD US",body:"The betrayal lands hardest on those who spent the week believing the worst rumors were about aliens, not their own government. Crowds gathered outside the Liaison Office by nightfall.",credibility:3,pressure:-3,stability:-15,sets_flags:{d6c1_published:true},axis:{a:1.5,b:1.5,c:0}},
+  D6C1_suppress:{headline:"(no headline — materials held)",body:"Independence Anniversary Week ends in an atmosphere of unresolved tension.",credibility:-1,pressure:0,stability:0,sets_flags:{d6c1_published:false},axis:{a:0,b:-1,c:0}},
+},
+
+DIALOGUE_TREES:{
+  D3_OldWang_Stage1:{speaker:"Old Wang",stage:"Stage 1: Building rapport",
+    opening:"You're back! You're the one who wrote about us before, right? Come, come — let me tell you more!",
+    choices:[
+      {label:'"I\'d really like to hear it — take your time."',signal:"Pathos",response:"Ah, you really want to hear it properly? Alright — ten years back, there was a good while with no fog at all. That's when I found it, right out in my field, near the old well.",evidence:{tag:"Pro",tier:"E1",score:1,source:"OldWang_stage1_patient"},next:"D3_OldWang_Stage2"},
+      {label:'"Can you tell me exactly when this happened?"',signal:"Logos",response:"When, exactly? Let me think... must've been the autumn after that big drought, I reckon. Yes, that sounds about right.",evidence:{tag:"Pro",tier:"E1",score:1,source:"OldWang_stage1_direct"},next:"D3_OldWang_Stage2"},
+      {label:'"Come on, Wang — an alien? Really?"',signal:"Skepticism",response:"Have I ever lied to you? I don't have time for people who don't believe me. (He clams up.)",evidence:null,next:"D3_OldWang_Stage2"},
+      {label:"(Say nothing — let him lead.)",signal:"",response:"Anyway, like I was saying — ten years back, no fog for a good while, and that's when I found this thing in my field. Strange days, those were.",evidence:null,next:"D3_OldWang_Stage2"},
+    ]},
+  D3_OldWang_Stage2:{speaker:"Old Wang",stage:"Stage 2: The offer",
+    opening:"I've still got one of its arms, you know. Want to see it? Costs a little, mind you — six coins.",
+    choices:[
+      {label:'"Sure, I\'ll pay to see it." (₵6)',signal:"",response:"Come on, this way — down to the cellar. Here, look— (He lifts the lid, and his face falls as the arm turns to ash before either can see it.) '...well. That's never happened before.'",evidence:null,cost:6,next:"D3_Wendell"},
+      {label:'"I\'ll pass on paying, but thanks."',signal:"",response:"No trouble at all! I just like having someone to talk to.",evidence:null,next:"D3_Wendell"},
+      {label:'"Tell me more first, then I\'ll decide."',signal:"Skepticism",response:"Hmph. You want the story for free first? Fine — it's old, it's gray, and it's gone now. That's all you get.",evidence:null,next:"D3_Wendell"},
+    ]},
+  D3_Wendell:{speaker:"Wendell (village resident)",stage:"Flower-watering encounter",
+    opening:"(He waters his flowers, then sprays himself in the face with the hose — twice in a row — muttering to himself.)",
+    choices:[
+      {label:'"...what exactly are you doing?"',signal:"",response:"Oh, the fog? It's our lifeblood! I don't think I could make it through a day without it — it's my personal humidifier! The concentration was 0.02% lower today, so I had to top myself up.",evidence:null,next:"D3_GarrickHolt"},
+      {label:'"How would you even know it\'s exactly 0.02% lower?"',signal:"Logos",response:"How do I know? Hm... well, look — (He pulls a strip of treated paper from his pocket.) I made this myself. I don't really know why I keep track. I just feel like I should.",evidence:{tag:"Neutral",tier:"E1",score:0,source:"Wendell_paper_strip"},next:"D3_GarrickHolt"},
+      {label:'"That doesn\'t seem like a healthy habit."',signal:"Pathos",response:"Ha! Maybe so, maybe so. But it works for me!",evidence:null,next:"D3_GarrickHolt"},
+      {label:'"Never mind that — what do you know about the ships?"',signal:"",response:"Ships? Not my business. Go ask him over there. (He nods toward Garrick Holt.)",evidence:null,sets_flag:"talked_to_flower_villager_about_ships",next:"D3_GarrickHolt"},
+    ]},
+  D3_GarrickHolt:{speaker:"Garrick Holt (village resident)",stage:"Harbor complaints",
+    opening:"Every blasted night, some ship comes rumbling into the harbor. A man can't get a wink of sleep around here anymore.",
+    choices:[
+      {label:'"What kind of ships? Whose flag?"',signal:"",response:"Foreign ones, I suppose. Couldn't tell you whose.",evidence:null,next:null},
+      {label:'"I heard Vodrenia\'s ships have been busy lately — is that what\'s keeping you up?"',signal:"Logos",response:"Wait — how could it be Vodrenia's? (He looks genuinely thrown.) That doesn't sound right to me at all.",evidence:{tag:"Con",tier:"E1",score:1,source:"Garrick_vodrenia_surprise"},sets_flag:"talked_to_flower_villager_about_ships",next:"D3_GarrickHolt_press"},
+    ]},
+  D3_GarrickHolt_press:{speaker:"Garrick Holt",stage:"Follow-up on Vodrenia detail",
+    opening:"(He seems genuinely puzzled by the Vodrenia detail.)",
+    choices:[
+      {label:'"Why do you say that?"',signal:"Logos",response:"I can't say for sure, but I've always thought that ship's paint job looked a bit off, somehow.",evidence:{tag:"Pro",tier:"E1",score:1,source:"Garrick_paint_detail"},next:null},
+      {label:"(Change the subject)",signal:"",response:"Anyway. Doesn't matter, I suppose. (He shrugs.)",evidence:null,next:null},
+    ]},
+  D6_Wendell_callback:{speaker:"Wendell",stage:"Day 6 callback",
+    opening:"Hey — did you ever get that letter I sent you?",
+    choices:[
+      {label:'"I did, thank you — it was thoughtfully written."',signal:"Pathos",response:"You did? Oh, that's wonderful! ...Say, funny thing — the fog feels thicker than usual today, doesn't it?",evidence:{tag:"Neutral",tier:"E1",score:0,source:"Wendell_day6_warm"},next:"D6_Tang_passport"},
+      {label:'"Oh — yeah, I think so."',signal:"",response:"Oh. (He looks a little hurt.) ...Right. Well. Never mind, then.",evidence:null,next:"D6_Tang_passport"},
+      {label:'"The fog looks different today, doesn\'t it?"',signal:"Logos",response:"You noticed too?! Yes — thicker than usual, isn't it? I knew I wasn't imagining it.",evidence:{tag:"Neutral",tier:"E1",score:0,source:"Wendell_day6_fog"},next:"D6_Tang_passport"},
+    ]},
+  D6_Tang_passport:{speaker:"Tang",stage:"The passport story",
+    opening:"It — it told me something, I think. About why it's here. Let me — let me try to explain it properly.",
+    choices:[
+      {label:'"Take your time — I\'m listening."',signal:"Pathos",response:"Thank you for listening. It held up something — some kind of document, I suppose, though the format was nothing I'd ever seen. I think I understood: it doesn't have a passport. Nowhere else would let it stay. Port Callah is the only place that doesn't ask for papers. It seemed almost... polite about the whole thing.",evidence:{tag:"Neutral",tier:"E2",score:0,source:"Tang_passport_full"},next:"D6_Tang_radiation"},
+      {label:'"What\'s the bottom line? Just tell me."',signal:"Logos",response:"Fine, fine — the bottom line. It doesn't have a passport. This is the one place that doesn't check. That's it.",evidence:{tag:"Neutral",tier:"E1",score:0,source:"Tang_passport_brief"},next:"D6_Tang_radiation"},
+      {label:'"Are you sure it actually \'talked\' to you?"',signal:"Skepticism",response:"I — well — yes, I'm sure! It just... it just can't go anywhere else, that's all I know.",evidence:{tag:"Neutral",tier:"E1",score:0,source:"Tang_passport_vague"},next:"D6_Tang_radiation"},
+    ]},
+  D6_Tang_radiation:{speaker:"Tang",stage:"The radiation symbol",
+    opening:"Look at this. I know how it sounds, but I really think this matters. (He holds up a torn scrap of packaging with a symbol printed on it.)",
+    choices:[
+      {label:'"Where exactly did you get this? Walk me through it."',signal:"Logos",response:"I got it off a crate down at the dock — one of the ones from that ship, the one everyone's been whispering about. Third crate from the left, if that helps.",evidence:{tag:"Pro",tier:"E1",score:1,source:"Tang_radiation_provenance"},next:null},
+      {label:'"Oh come on, Tang, not this again."',signal:"Skepticism",response:"...Fine. Don't believe me, then. (He hands it over anyway, looking a bit wounded.)",evidence:null,next:null},
+      {label:'"Did anyone see you take this? Are you okay?"',signal:"Pathos",response:"I... no one's asked me that all week. (He pauses, caught off guard.) I'm fine, really. I climbed over a fence — nearly didn't make it, there were guards everywhere, more than I've ever seen down there. But I'm fine.",evidence:{tag:"Pro",tier:"E1",score:1,source:"Tang_radiation_care"},sets_flag:"showed_concern_for_tang",next:null},
+    ]},
+},
+
+MORGUE_PROFILES:{
+  "Arthur Pendelton":{age:"29",occupation:"Dock worker / sailor",address:"Fisherman's Walk, North Cove",notes:"Rescued from the Day 5 collision. One of two sailors recovered."},
+  "Donald Croft":{age:"54",occupation:"Retired dock worker / amateur astronomer",address:"Harbor View Row 12, South Quarter",notes:"Owns a personal telescope. Witnessed the masked vigilante on his roof."},
+  "Gavin Ross":{age:"34",occupation:"Dock worker / sailor",address:"Fisherman's Walk, North Cove",notes:"Rescued alongside Arthur Pendelton. Deeply shaken by the incident."},
+  "Jonathan Wright":{age:"39",occupation:"Mystery novelist",address:"Birchwood Crescent 9, North Quarter",notes:"Collects a weekly Laudanum prescription from Port Callah Hospital. Has a wife (Margaret) and son."},
+  "Lucas Marsh":{age:"36",occupation:"Vodrenian defector / Sorengardi Mutual Aid speaker",address:"Dockside Boarding House",notes:"Fled Vodrenia. Active fundraiser and speaker for the Sorengardi Mutual Aid Organisation."},
+  "Lulu Qi":{age:"31",occupation:"Self-described private detective",address:"Mill Street 4, South Quarter",notes:"Claims to have witnessed Jonathan Wright's abduction. Submitted a letter to the Ledger."},
+  "Old Wang":{age:"Unknown",occupation:"Mountain village farmer",address:"Mountain Village, northeast of Port Callah",notes:"Found an unusual object in his field roughly ten years ago during a fog-free period."},
+  "Tang":{age:"48",occupation:"Freelance writer (on leave from Kessler University)",address:"Cove View Lane 7, North Quarter",notes:"Believes alien activity is occurring in the mountain village. His dog's barking reportedly encodes coordinates in Morse."},
+  "Thomas Finch":{age:"45",occupation:"Bakery owner",address:"Baker's Row 2, South Quarter",notes:"Proprietor of a bakery selling 'extraterrestrial yeast' bread. Offered the Ledger a ₵12 promotional deal."},
+},
+
+BIO_PHOTOS:{
+  "Arthur Pendelton":"bio file/arthur pendleton.png",
+  "Donald Croft":"bio file/Donald croft.png",
+  "Gavin Ross":"bio file/gavin ross.png",
+  "Jonathan Wright":"bio file/Jonathan Wright.png",
+  "Lucas Marsh":"bio file/lucas Marsh.png",
+  "Lulu Qi":"bio file/luluqi.png",
+  "Old Wang":"bio file/old wang.png",
+  "Tang":"bio file/tang.png",
+  "Thomas Finch":"bio file/thomas finch.png",
+},
+
+PERSONALITY_NAMES:{FPI:"The Reporter",FPW:"The Chronicler",FHI:"The Strategist",FHW:"The Verifier",SPI:"The Editor",SPW:"The Witness",SHI:"The Operator",SHW:"The Silent"},
+PERSONALITY_BELIEFS:{
+  FPI:'"Truth exists, find it, publish it."',
+  FPW:'"I write down what I see, simply because it is true."',
+  FHI:'"A truth timed wrong is no better than a lie."',
+  FHW:'"Without enough evidence, I say nothing."',
+  SPI:'"How you tell it matters as much as what you tell."',
+  SPW:'"I saw something strange. I wrote it down. I\'m glad I did."',
+  SHI:'"The story I choose to tell — and who I tell it to — that\'s the real power."',
+  SHW:'"I know too much, and not enough."',
+},
+PERSONALITY_ENDINGS:{
+  FPI:"The paper was pushed into the center of the storm this week. The editor folded the paper and put it in his desk drawer without a word.",
+  FPW:"Every story you published this week held up. The paper's reputation didn't seem like your real reason for any of it.",
+  FHI:"You spent a week gathering solid evidence and choosing your moments carefully. Some things you still haven't used.",
+  FHW:"Your notes are meticulous. Your front page was quiet. Years from now, someone will use what you wrote.",
+  SPI:"You chose a frame, and it worked. The details you left out are still out there somewhere.",
+  SPW:"Tang came to visit the following week. The two of you talked for a long time. That fog piece was the one you most enjoyed writing.",
+  SHI:"You rarely gave the full story to the press. More often, you passed things to the right person at the right moment.",
+  SHW:"The material stayed in the drawer. Later, no one knew where it went.",
+},
+ABOU_LETTERS:{
+  FPI:'"What you did this week stirred the whole city\'s direction. I don\'t know whether to call it brave or dangerous — probably both."',
+  FPW:'"Everything you wrote, I believed. But you never seemed to write it for the sake of being believed."',
+  FHI:'"You\'ve been sitting on something big all week. I imagine you know exactly when to use it."',
+  FHW:'"Your letters to me were longer than anything you published. I think you copied your whole notebook out for me."',
+  SPI:'"The paper read beautifully. But the version you told me in your letters — that was a different story."',
+  SPW:'"The last few letters you sent — you\'re starting to sound like Tang. I mean that as... well. Make of it what you will."',
+  SHI:'"Half the things you mentioned in your letters, I heard about later through other channels. Nothing in the paper, though. What have you been up to?"',
+  SHW:'"You\'ve been very quiet this week. I get the sense there are things you weren\'t going to tell me regardless."',
+},
+TANG_CODA:'\n\nTang later sent word through a mutual contact: "That reporter — they were the only one who asked me if I was tired."',
+DAY1_NEWS:{headline:"INDEPENDENCE ANNIVERSARY WEEK BEGINS, PORT CALLAH ON ALERT",body:"Port Callah was once territory of Vodrenia, the northern power, before unilaterally declaring independence years ago and becoming a free port claimed by no nation. Vodrenia has never recognized the split, still listing Port Callah as \"unreclaimed territory.\" Sorengard, the eastern sea power, quietly favors Port Callah's independence — losing Vodrenia a deep-water port works in Sorengard's interest — but Sorengard, too, has never formally recognized it, offering only informal shelter.<br><br>This week marks the anniversary of that declaration. Every year, Vodrenia uses the occasion to remind the port it hasn't given up its claim, and local authorities are on edge."},
+FRIEND_MAIL:{
+  1:[{sender:"Distant Friend — Abou",text:"Made it there okay?<br><br>I won't lie, hearing they sent you to Port Callah left me uneasy. I'm not blaming you for what happened with that story — you know better than anyone where it went wrong. Call it a demotion, call it a second chance: keep your head down out there, do the work right, and coming back is just a matter of time.<br><br>I looked into the place a bit. Bad timing — you've landed right in their Independence Anniversary Week, and I hear things get tense around here. You don't know anyone there, so watch yourself.<br><br>Not much else I can do from here. Just write back and let me know you're alright.<br><br>Get through this, and come home soon.<br><br>— Abou"}],
+  2:[{sender:"Distant Friend — Abou",text:"Got your first letter. Glad you're settled.<br><br>Saw a wire report mentioning some strange story out of Port Callah — a UFO tip from a freelancer, something about a village dog barking in Morse code. I had to read it twice. Please tell me you're not chasing little green men out there. Actually, don't tell me. Just be careful who you take seriously.<br><br>Write when you can.<br><br>— Abou"}],
+  3:[{sender:"Distant Friend — Abou",text:"A private detective writing in to \"save\" a mystery novelist? That's the kind of story that reads great and falls apart the second you check it. You've seen enough of those before — don't let it be the thing that gets you in trouble again.<br><br>Otherwise, how are you holding up? Food, sleep, all that.<br><br>— Abou"}],
+  4:[{sender:"Distant Friend — Abou",text:"That fog story is still nagging at you, isn't it — I can tell from how you wrote about it. And this reunification group making noise doesn't sound like it's making your job any calmer.<br><br>It's Independence Week over there. Everyone's on edge. Keep some distance where you can.<br><br>— Abou"}],
+  5:[{sender:"Distant Friend — Abou",text:"Read about the ships in port last night — the smuggling angle, the sailors' side of it. Whatever's actually going on, it doesn't sound like a quiet story to be standing next to.<br><br>Just — don't get too close to this one. Some things aren't worth being first on.<br><br>— Abou"}],
+  6:[{sender:"Distant Friend — Abou",text:"Read your piece on the ship statement. Can't tell if you believe the angle you ran with, or if you're just being careful with what you print. Either way it's not like you to sit on something this long — or maybe it is, lately.<br><br>Take care of yourself out there.<br><br>— Abou"}],
+},
+DETAINED_MAIL:{
+  5:[{sender:"Editor",text:"Get some rest. Here's something for your cold.\n(A packet of cold remedy tablets falls out of the envelope.)"},
+     {sender:"Distant Friend — Abou",text:"Haven't heard from you in two days. Are you alright? The editor mentioned you might be under the weather — he's sending something for a cold, just in case.<br><br>Write back when you can. Even just a line.<br><br>— Abou"}],
+  6:[{sender:"Distant Friend — Abou",text:"Still nothing from you. I keep telling myself it's just the cold dragging on, but it's been days now. If this doesn't let up, someone should go check on you.<br><br>Get better. Please just write back.<br><br>— Abou"}],
+},
+DAY7_STANDARD:"DAY 7 — INDEPENDENCE DAY\n\nThe morning paper carries a single headline:\n\n\"MAYOR'S GAMBLE: NUCLEAR DETERRENT CITED IN FORMAL DEMAND FOR VODRENIA TO RECOGNIZE PORT CALLAH'S INDEPENDENCE\"\n\nBelow the fold: the Eastern nation of Sorengard has, for the first time, formally and publicly recognized Port Callah as an independent state. Forty years of unofficial shelter, made official in a paragraph.\n\nThe week is over.",
+DAY7_RECLAMATION:"DAY 7 — RECLAMATION DAY\n\nThe morning paper — not the Ledger — carries the headline:\n\n\"VODRENIA MOVES ON PORT CALLAH: CROWDS OPEN THE GATES\"\n\nThe anger that built up this week found a direction. It found the village first, then the harbor. By the time anyone thought to stop it, Vodrenian forces were already inside the city limits, welcomed by a portion of the population that had spent a week reading about their government's secrets.\n\nOctober 16th will be called Reclamation Day in the histories that Vodrenia writes.\n\nThe week is over.",
+DAY7_SUSPENSION:"GAME OVER — SUSPENDED\n\nThree consecutive cases fell below the minimum evidence threshold. The editor called you in on the last morning of the week.\n\n\"I can't keep defending this to the board,\" he said. \"Take some time away.\"\n\nYou left the newsroom before the Independence Day parade started.\n\nThe week is over — just not the way you planned.",
+
+}; // end GD
+
+/* ══════════════════════════════════════════════════════════════
+   GAME STATE
+══════════════════════════════════════════════════════════════ */
+const GS = {
+  credibility:50,pressure:2,stability:70,funds:8,
+  day:1,actionsLeft:4,
+  axisA:0,axisB:0,axisC:0,
+  pathosCount:0,logosCount:0,skepticismCount:0,
+  consecutiveUnderMin:0,
+  contactsUsedToday:[],
+  evidenceLog:{},        // {caseId:[{tag,tier,score,source}]}
+  claimedSources:new Set(),
+  flags:{
+    used_magnifier_first:false,offered_bribe_military:false,
+    warned_off_alien_story:false,alien_published_d1:false,
+    asked_official_before_chief:false,asked_CI_before_reunification:false,
+    case_1_killed:false,case_2_killed:false,forced_day_off_d4:false,
+    talked_to_flower_villager_about_ships:false,caught_with_warhead_glimpse:false,
+    complies_with_silence:false,detained_d4:false,
+    d5c1_evidence_drugs:false,d5c1_evidence_sailors:false,
+    d5c1_published:false,d5c1_angle_drugs:false,d5c1_angle_sailors:false,
+    d5c2_published:false,reclamation_day_triggered:false,
+    reunification_funding_exposed:false,wright_story_published:false,
+    magnifier_unlocked:false,alien_bread_bribe_accepted:false,
+    showed_concern_for_tang:false,bribe_military_accepted:false,
+    d2c3_published:false,d3c1_published:false,d3c2_published:false,
+    d4c1_published:false,d6c1_published:false,
+  },
+  mailQueue:[],
+  casesPublishedThisRun:{},
+  alienCasesPublished:0,
+  newspaperStack:[],
+  pendingResults:[],
+  dayCases:[],
+  casesToPublish:[],
+  publishIndex:0,
+  currentCase:'',
+  dialogueNode:'',
+  d5c1Decision:'',d5c2Decision:'',
+  magnifierUsedD4:false,
+  radiationSymbolFound:false,
+  deskPhotoClicked:false,
+  morningMailList:[],
+  deskLetters:[],
+
+  setFlag(k,v){this.flags[k]=v},
+  getFlag(k){return !!this.flags[k]},
+
+  addEvidence(caseId,tag,tier,source){
+    if(!this.evidenceLog[caseId])this.evidenceLog[caseId]=[];
+    if(!source)source=caseId+'_'+tag+'_'+tier+'_'+this.evidenceLog[caseId].length;
+    if(this.claimedSources.has(source))return false;
+    this.claimedSources.add(source);
+    const score=tier==='E3'?3:tier==='E2'?2:tier==='E1'?1:0;
+    this.evidenceLog[caseId].push({tag,tier,score,source});
+    return true;
+  },
+
+  evidenceTotal(caseId){
+    return(this.evidenceLog[caseId]||[]).reduce((s,e)=>s+(e.tag==='Pro'||e.tag==='Con'?e.score:0),0);
+  },
+
+  spendAction(){
+    if(this.actionsLeft<=0)return false;
+    this.actionsLeft--;return true;
+  },
+
+  applyStatDelta(cred,pres,stab){
+    this.credibility=Math.max(0,Math.min(100,this.credibility+cred));
+    this.pressure=Math.max(0,Math.min(10,this.pressure+pres));
+    this.stability=Math.max(0,Math.min(100,this.stability+stab));
+  },
+
+  applyAxis(a,b,c){
+    this.axisA=Math.max(-10,Math.min(10,this.axisA+a));
+    this.axisB=Math.max(-10,Math.min(10,this.axisB+b));
+    this.axisC=Math.max(-10,Math.min(10,this.axisC+c));
+  },
+
+  startNewDay(){
+    this.actionsLeft=4;
+    this.contactsUsedToday=[];
+    this.funds+=10;
+    if(this.funds>=6)this.funds-=6;
+    else this.mailQueue.push({sender:"Landlord",text:"Rent's short again this week. I'm not in a rush, but I am keeping count."});
+  },
+
+  checkSuspension(){return this.consecutiveUnderMin>=3},
+
+  recordCaseResult(caseId,published){
+    const c=GD.CASES[caseId];
+    if(!c||c.min_evidence===0)return;
+    if(this.getFlag('detained_d4')&&(this.day===5||this.day===6))return;
+    if(this.evidenceTotal(caseId)>=c.min_evidence)this.consecutiveUnderMin=0;
+    else this.consecutiveUnderMin++;
+  },
+
+  getPersonalityCode(){
+    const a=this.axisA>=0?'F':'S';
+    const b=this.axisB>=0?'P':'H';
+    const c=this.axisC>=0?'I':'W';
+    return a+b+c;
+  },
+};
+
+/* ══════════════════════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════════════════════ */
+function updateStatus(){
+  document.getElementById('sb-day').textContent='Day '+GS.day;
+  document.getElementById('sb-act').textContent='Actions: '+GS.actionsLeft;
+  document.getElementById('sb-funds').textContent='₵'+GS.funds;
+  const ce=document.getElementById('sb-cred');
+  ce.textContent='Cred: '+GS.credibility;
+  ce.className=GS.credibility<20?'warn':GS.credibility>=60?'good':'hi';
+  const pe=document.getElementById('sb-pres');
+  pe.textContent='Press: '+GS.pressure;
+  pe.className=GS.pressure>=5?'warn':'';
+  document.getElementById('sb-stab').textContent='Stab: '+GS.stability;
+}
+
+let _currentMode='paper';
+
+function showPaper(){
+  document.getElementById('paper-wrap').style.display='';
+  document.getElementById('morning-wrap').style.display='none';
+  document.getElementById('case-wrap').style.display='none';
+  document.getElementById('desk-wrap').style.display='none';
+  document.getElementById('printing-wrap').style.display='none';
+  _currentMode='paper';
+}
+function showMorningWrap(){
+  document.getElementById('paper-wrap').style.display='none';
+  document.getElementById('morning-wrap').style.display='block';
+  document.getElementById('case-wrap').style.display='none';
+  document.getElementById('desk-wrap').style.display='none';
+  document.getElementById('printing-wrap').style.display='none';
+  _currentMode='morning';
+}
+function showCaseWrap(){
+  document.getElementById('paper-wrap').style.display='none';
+  document.getElementById('morning-wrap').style.display='none';
+  document.getElementById('case-wrap').style.display='block';
+  document.getElementById('desk-wrap').style.display='none';
+  document.getElementById('printing-wrap').style.display='none';
+  _currentMode='case';
+}
+function showDeskWrap(){
+  document.getElementById('paper-wrap').style.display='none';
+  document.getElementById('morning-wrap').style.display='none';
+  document.getElementById('case-wrap').style.display='none';
+  document.getElementById('desk-wrap').style.display='flex';
+  document.getElementById('printing-wrap').style.display='none';
+  _currentMode='desk';
+}
+function showPrintingWrap(){
+  document.getElementById('paper-wrap').style.display='none';
+  document.getElementById('morning-wrap').style.display='none';
+  document.getElementById('case-wrap').style.display='none';
+  document.getElementById('desk-wrap').style.display='none';
+  document.getElementById('printing-wrap').style.display='flex';
+  _currentMode='printing';
+}
+
+// Paper mode helpers
+function setScreen(titleHtml,bodyHtml){
+  document.getElementById('paper-title').innerHTML=titleHtml;
+  document.getElementById('paper-body').innerHTML=bodyHtml;
+  clearBtns();
+}
+function setBg(url){
+  const bg=document.getElementById('paper-bg');
+  if(url){bg.style.backgroundImage='url('+url+')';bg.classList.add('dim');}
+  else{bg.style.backgroundImage='';bg.classList.remove('dim');}
+}
+function clearBtns(){document.getElementById('paper-btns').innerHTML=''}
+function playBtnSfx(label){
+  const t=(label||'').toUpperCase();
+  if(t.includes('PUBLISH')&&!t.includes('SUPPRESS')&&!t.includes('DECLINE'))playSfx('publish');
+  else if(t.includes('SUPPRESS')||t.includes('DECLINE'))playSfx('notpublish');
+  else playSfx('page');
+}
+function addBtn(label,fn,cls){
+  const b=document.createElement('button');
+  b.innerHTML=label;if(cls)b.className=cls;
+  b.onclick=()=>{playBtnSfx(label);fn();};
+  document.getElementById('paper-btns').appendChild(b);
+  return b;
+}
+function addSep(txt){
+  const b=document.createElement('button');b.className='sep';
+  b.textContent=txt||'──────────────────────────';
+  b.disabled=true;
+  document.getElementById('paper-btns').appendChild(b);
+}
+
+// Desk left pane helpers
+function setLeft(titleText,bodyHtml){
+  const lp=document.getElementById('lp');
+  lp.classList.add('fade-out');
+  setTimeout(()=>{
+    lp.innerHTML=`<div class="lp-title">${titleText}</div><div class="lp-body">${bodyHtml}</div>`;
+    lp.classList.remove('fade-out');lp.classList.add('fade-in');
+    setTimeout(()=>lp.classList.remove('fade-in'),200);
+  },100);
+}
+function setLeftRaw(html){
+  const lp=document.getElementById('lp');
+  lp.classList.add('fade-out');
+  setTimeout(()=>{
+    lp.innerHTML=html;
+    lp.classList.remove('fade-out');lp.classList.add('fade-in');
+    setTimeout(()=>lp.classList.remove('fade-in'),200);
+  },100);
+}
+function clearDeskBtns(){document.getElementById('desk-btns').innerHTML=''}
+function addDeskBtn(label,fn){
+  const b=document.createElement('button');b.innerHTML=label;
+  b.onclick=()=>{playSfx('click');fn();};
+  document.getElementById('desk-btns').appendChild(b);return b;
+}
+function addDeskSep(txt){
+  const s=document.createElement('button');s.className='dsep';
+  s.textContent=txt||'──────────────────────────';s.disabled=true;
+  document.getElementById('desk-btns').appendChild(s);
+}
+
+// Wrap a dialogue/document line as an inline, "cuttable" evidence span
+// (dashed underline). Neutral lines render as plain text.
+function evLine(cid,ln,idx,keyName){
+  if(!ln.tag||ln.tag==='Neutral')return `<p>"${ln.text}"</p>`;
+  const src=ln.source||(keyName+'_'+GS.day+'_'+cid+'_'+idx);
+  const claimed=GS.claimedSources.has(src);
+  const srcAttr=String(src).replace(/"/g,'&quot;');
+  return `<p>"<span class="ev-drag${claimed?' claimed':''}"
+    data-cid="${cid}" data-tag="${ln.tag}" data-tier="${ln.tier||'E1'}" data-source="${srcAttr}">${ln.text}</span>"</p>`;
+}
+
+// ── Scissors mode: press C to arm, click a dashed evidence line to cut
+// it onto the board, V (or a successful cut) disarms it again. ──
+let scissorMode=false;
+function setScissorMode(on){
+  scissorMode=on;
+  document.body.classList.toggle('scissor-mode',on);
+}
+document.addEventListener('keydown',e=>{
+  const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea')return;
+  if(e.key==='c'||e.key==='C')setScissorMode(true);
+  else if(e.key==='v'||e.key==='V')setScissorMode(false);
+});
+document.addEventListener('click',e=>{
+  if(!scissorMode)return;
+  e.preventDefault();e.stopPropagation();
+  const el=e.target.closest&&e.target.closest('.ev-drag');
+  if(el&&!el.classList.contains('claimed'))cutEvidence(el);
+  setScissorMode(false);
+},true);
+
+function cutEvidence(el){
+  const cid=el.dataset.cid,tag=el.dataset.tag,tier=el.dataset.tier,source=el.dataset.source;
+  if(GS.addEvidence(cid,tag,tier,source)){
+    playSfx('scissor');
+    if(cid===GS.currentCase)updateDeskHeader();
+    renderEvidenceIcons();
+    el.classList.add('claimed');
+  }
+}
+
+function renderEvidenceIcons(){
+  const box=document.getElementById('ev-icons');
+  if(!box)return;
+  box.innerHTML='';
+  hideEvPopup();
+  const cid=GS.currentCase;
+  if(!cid)return;
+  if(!GS.evPos)GS.evPos={};
+  const list=(GS.evidenceLog[cid]||[]).filter(e=>e.tag==='Pro'||e.tag==='Con');
+  const minL=82.5,maxL=96.5,minT=53.5,maxT=84,minDistL=3.2,minDistT=4.2;
+  const placed=[];
+  list.forEach(e=>{
+    let pos=GS.evPos[e.source];
+    if(!pos){
+      let tries=0,ok=false;
+      while(tries<30&&!ok){
+        pos={left:minL+Math.random()*(maxL-minL),top:minT+Math.random()*(maxT-minT)};
+        ok=placed.every(p=>Math.abs(p.left-pos.left)>=minDistL||Math.abs(p.top-pos.top)>=minDistT);
+        tries++;
+      }
+      GS.evPos[e.source]=pos;
+    }
+    placed.push(pos);
+    const d=document.createElement('div');
+    d.className='ev-icon draggable '+(e.tag==='Pro'?'pro':'con');
+    d.style.left=pos.left+'%';
+    d.style.top=pos.top+'%';
+    d.title=e.source;
+    box.appendChild(d);
+    attachDrag(d,()=>showEvPopup(e),(l,t)=>{GS.evPos[e.source]={left:l,top:t};});
+  });
+}
+
+function showEvPopup(e){
+  const p=document.getElementById('ev-popup');
+  if(!p)return;
+  const cls=e.tag==='Pro'?'pro':'con';
+  p.innerHTML=`<span class="ev-close" onclick="playSfx('switch');hideEvPopup()">&times;</span>
+    <p class="ev-tag ${cls}">${e.tag==='Pro'?'Pro':'Con'}</p>
+    <p>Strength: ${e.score}</p>`;
+  p.style.display='block';
+}
+function hideEvPopup(){
+  const p=document.getElementById('ev-popup');
+  if(p)p.style.display='none';
+}
+function updateDeskHeader(){
+  const cid=GS.currentCase;
+  const h=document.getElementById('desk-hdr');
+  if(!cid||!GD.CASES[cid]){h.textContent='';return;}
+  const c=GD.CASES[cid];
+  const ev=GS.evidenceTotal(cid);const min=c.min_evidence;
+  const col=ev>=min?'#44aa44':'#cc3333';
+  h.innerHTML=`<strong style="color:#c8a060">${c.title}</strong>&nbsp;&nbsp;<span style="color:${col}">${ev}/${min} pts</span>&nbsp;&nbsp;<span style="color:#888">Act:${GS.actionsLeft} ₵${GS.funds}</span>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PHASE LOGIC
+══════════════════════════════════════════════════════════════ */
+function enterPhase(p){
+  updateStatus();
+  switch(p){
+    case 'TITLE':phaseTitle();break;
+    case 'MORNING':phaseMorning();break;
+    case 'CASE_SELECT':phaseCaseSelect();break;
+    case 'PUBLISH_MENU':phasePublishMenu();break;
+    case 'PUBLISH_ANGLE':phasePublishAngle();break;
+    case 'D4_WARHEAD':phaseD4Warhead();break;
+    case 'D5_SEQUENCE':phaseD5Sequence();break;
+    case 'D6_CHOICE':phaseD6Choice();break;
+    case 'BRIBE':phaseBribe();break;
+    case 'FIELD_DIALOGUE':phaseFieldDialogue();break;
+    case 'ENDING':phaseEnding();break;
+  }
+}
+
+function phaseTitle(){
+  setMusic('start');
+  showPaper();setBg('');
+  setScreen('INK AND ALIBI &nbsp;&mdash;&nbsp; 铅字与谎言',
+    `<p>Port Callah, October 10th. Independence Anniversary Week has just begun.</p>
+    <p>You are a fact-checking reporter, recently posted to this free port city. Your paper — the Callah Morning Ledger — has four investigation actions per day. Spend them carefully.</p>
+    <hr>
+    <p><strong>Three core stats:</strong></p>
+    <p>Newspaper <strong>Credibility</strong> (starts at 50) — drops to 0 and the paper closes.</p>
+    <p>Political <strong>Pressure</strong> (starts at 2) — higher means you need stronger evidence to publish safely.</p>
+    <p>Citizen <strong>Stability</strong> (starts at 70) — the city's mood.</p>
+    <p class="dim">Each morning you receive ₵4 net income (₵10 income minus ₵6 rent). Use funds for contacts and tools.</p>`);
+  addBtn('Begin — Day 1, October 10th',()=>{playSfx('switch');startDay(1);});
+}
+
+const DATES=['','October 10th','October 11th','October 12th','October 13th','October 14th','October 15th','October 16th'];
+
+function startDay(d){
+  GS.day=d;
+  GS.startNewDay();
+  // Collect morning mail
+  let mail=[];
+  if(GS.getFlag('detained_d4')&&(d===5||d===6)){
+    mail=(GD.DETAINED_MAIL[d]||[]);
+    if(d===6){
+      const breadLine=GS.getFlag('alien_bread_bribe_accepted')
+        ?"A colleague dropped off a loaf of the bakery's 'extraterrestrial yeast' bread. Still warm."
+        :"A colleague dropped off an ordinary loaf of bread. Still warm.";
+      mail=[{sender:"Colleague",text:breadLine},...mail];
+    }
+  } else {
+    mail=[...GS.mailQueue,...(GD.FRIEND_MAIL[d]||[])];
+    GS.mailQueue=[];
+  }
+  GS.morningMailList=mail;
+  phaseMorning();
+}
+
+function breakfastImg(){
+  if(GS.getFlag('detained_d4'))return 'morning/breakfast00.png';
+  const f=GS.funds;
+  if(GS.day===1||f<=5)return 'morning/breakfast00.png';
+  if(f<=11)return 'morning/breakfast01.png';
+  if(f<=20)return 'morning/breakfast02.png';
+  if(f<=35)return 'morning/breakfast03.png';
+  return 'morning/breakfast04.png';
+}
+
+let _mNewsText='';let _mLetterText='';
+
+function phaseMorning(){
+  setMusic('start');
+  const d=GS.day;
+  // D3 morning: Wright reversal fires the day after D2C1 publishes
+  if(d===3&&GS.getFlag('wright_story_published')&&!GS.getFlag('wright_reversal_applied')){
+    GS.setFlag('wright_reversal_applied',true);
+    const rev=GD.OUTCOMES.D2C1_reversal;
+    GS.applyStatDelta(rev.credibility,rev.pressure,rev.stability);
+    GS.applyAxis(rev.axis.a||0,rev.axis.b||0,rev.axis.c||0);
+    GS.newspaperStack.push({headline:rev.headline,body:rev.body});
+    updateStatus();
+  }
+  // Build news text
+  if(d===1){
+    _mNewsText=`<strong>${GD.DAY1_NEWS.headline}</strong><br>${GD.DAY1_NEWS.body}`;
+  } else if(GS.newspaperStack.length===0){
+    _mNewsText='<em>(Nothing ran in yesterday\'s edition.)</em>';
+  } else {
+    _mNewsText=GS.newspaperStack.map(i=>`<strong>${i.headline}</strong><br>${i.body}`).join('<hr>');
+  }
+  GS.newspaperStack=[];
+  // Build letter text
+  const mail=GS.morningMailList;
+  if(mail.length===0){_mLetterText='<em>(No letter today.)</em>';}
+  else{_mLetterText=mail.map(m=>`<strong style="color:#a0c8e8">From: ${m.sender}</strong><br>${m.text}`).join('<hr>');}
+
+  // Build memo text
+  let memo=`<strong>Morning — ${DATES[d]}</strong>`;
+  if(d===1)memo+='<br><em>There\'s a croissant on your kitchen table. You eat it. It\'s good.</em>';
+  memo+='<br><br><em class="dim">Click the newspaper or letter on the table to read.</em>';
+
+  showMorningWrap();
+  document.getElementById('morning-bg-img').src=breakfastImg();
+  document.getElementById('morning-panel-hdr').textContent='── EDITOR\'S DESK ──';
+  document.getElementById('morning-panel-text').innerHTML=memo;
+  updateStatus();
+}
+
+function mShowNews(){
+  playSfx('page');
+  document.getElementById('morning-panel-hdr').textContent='── PORT CALLAH DAILY ──';
+  let html=_mNewsText;
+  const notice=GD.GOVT_NOTICES[GS.day];
+  if(notice)html+=`<hr><em style="color:#aaaaaa">Government Notice:</em> ${notice}`;
+  document.getElementById('morning-panel-text').innerHTML=html;
+}
+function mShowLetter(){
+  playSfx('page');
+  document.getElementById('morning-panel-hdr').textContent='── YOUR MAIL ──';
+  document.getElementById('morning-panel-text').innerHTML=_mLetterText;
+}
+function beginInvestigation(){
+  playSfx('switch');
+  // Check detained
+  if(GS.getFlag('detained_d4')&&(GS.day===5||GS.day===6)){
+    showPaper();setBg('');
+    setScreen('Day '+GS.day+' — CONFINED TO QUARTERS',
+      `<p>You are not permitted to leave your home. Two letters arrived.</p>
+       <p class="dim">Spend the day waiting.</p>`);
+    addBtn('Wait for tomorrow →',()=>endDay());
+    return;
+  }
+  // Check forced day off (Day 4)
+  if(GS.getFlag('forced_day_off_d4')&&GS.day===4){
+    const out=GD.OUTCOMES.D4C1_forced_day_off;
+    GS.applyStatDelta(out.credibility,out.pressure,out.stability);
+    updateStatus();
+    showPaper();setBg('');
+    setScreen('Day 4 — FORCED DAY OFF',`<p>${out.body}</p>`);
+    addBtn('Wrap up the day →',()=>endDay());
+    return;
+  }
+  // Check suspension / credibility
+  if(GS.credibility<=0){endGameCredibility();return;}
+  if(GS.checkSuspension()){endGameSuspension();return;}
+  // Get day cases
+  GS.dayCases=getDayCases(GS.day);
+  GS.casesToPublish=[...GS.dayCases];
+  GS.publishIndex=0;
+  enterPhase('CASE_SELECT');
+}
+
+function getDayCases(d){
+  const result=[];
+  for(const cid in GD.CASES){
+    const c=GD.CASES[cid];
+    if(c.day!==d)continue;
+    if(c.condition&&!GS.getFlag(c.condition))continue;
+    if(d===4&&GS.getFlag('forced_day_off_d4'))continue;
+    result.push(cid);
+  }
+  return result;
+}
+
+/* ── CASE SELECT ──────────────────────────────────────────── */
+function phaseCaseSelect(){
+  setMusic('factcheck');
+  const d=GS.day;
+  showCaseWrap();
+  document.getElementById('cs-day-lbl').textContent=`Day ${d} — SELECT CASE FILE`;
+  document.getElementById('cs-stat-lbl').textContent=`Actions: ${GS.actionsLeft}  |  ₵${GS.funds}  |  Cred: ${GS.credibility}`;
+  // Render folders
+  const fc=document.getElementById('case-folders');
+  fc.innerHTML='';
+  if(GS.dayCases.length===0){
+    const lbl=document.createElement('div');
+    lbl.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#d4a84e;font-size:18px;text-align:center';
+    lbl.textContent='No active cases today.';
+    fc.appendChild(lbl);
+    return;
+  }
+  // Folder positions (percentage-based for 1280×720)
+  const positions=[
+    {l:'48.91%',t:'33.89%',w:'44.19%',h:'39.14%'},
+    {l:'6.82%',t:'13.61%',w:'41.54%',h:'33.09%'},
+    {l:'8.47%',t:'32.64%',w:'35.52%',h:'40.40%'},
+    {l:'47.93%',t:'32.32%',w:'39.68%',h:'40.72%'},
+  ];
+  GS.dayCases.forEach((cid,i)=>{
+    if(i>=4)return;
+    const pos=positions[i];
+    const c=GD.CASES[cid];
+    const ev=GS.evidenceTotal(cid);
+    const met=ev>=c.min_evidence;
+    const div=document.createElement('div');
+    div.className='case-folder';
+    const zIndex=5+Math.round(parseFloat(pos.t));
+    div.style.cssText=`left:${pos.l};top:${pos.t};width:${pos.w};height:${pos.h};z-index:${zIndex}`;
+    div.innerHTML=`<img src="case-select/folder.png" alt="" draggable="false">
+      <div class="fid">${cid}</div>
+      <div class="ftitle">${c.title}</div>
+      <div class="fev" style="color:${met?'#44aa44':'#cc3333'}">[${ev}/${c.min_evidence}]</div>`;
+    div.onclick=()=>{playSfx('switch');showDeskForCase(cid);};
+    fc.appendChild(div);
+  });
+}
+
+function csMorgue(){
+  showPaper();setBg('');
+  const names=Object.keys(GD.MORGUE_PROFILES).sort();
+  setScreen('News Morgue — Biographical Files','<p class="dim">Select a name to view their profile.</p>');
+  names.forEach(n=>{
+    addBtn(n,()=>showProfile(n,'CASE_SELECT'));
+  });
+  addSep();
+  addBtn('← Back to office',()=>enterPhase('CASE_SELECT'));
+}
+
+function showProfile(name,back){
+  const p=GD.MORGUE_PROFILES[name];
+  if(!p)return;
+  const body=`<p><strong>Age:</strong> ${p.age}</p>
+     <p><strong>Occupation:</strong> ${p.occupation}</p>
+     <p><strong>Address:</strong> ${p.address}</p>
+     ${p.notes?`<p class="dim"><em>Notes: ${p.notes}</em></p>`:''}`;
+  if(back==='desk'){
+    // Stays inside the desk's left-hand panel — clicking another item or
+    // re-opening Biographical Files simply replaces it, no separate exit needed.
+    const photoSrc=GD.BIO_PHOTOS[name];
+    const photoHtml=photoSrc?`<img class="bio-photo" src="${photoSrc}" alt="${name}">`:'';
+    setLeft(name,body+photoHtml);
+    clearDeskBtns();addDeskBtn('← Back',deskBio);
+    return;
+  }
+  showPaper();setBg('');
+  setScreen(name,body);
+  addBtn('← Back',csMorgue);
+}
+
+/* ── DESK SETUP ───────────────────────────────────────────── */
+function showDeskForCase(caseId){
+  setMusic('factcheck');
+  GS.currentCase=caseId;
+  GS.deskPhotoClicked=false;
+  // Reset magnifier state (D6C1 keeps it unlocked once Tang's radiation
+  // symbol has actually been shown to the player during the dialogue).
+  const magEl=document.getElementById('magnifier');
+  if(!(caseId==='D6C1'&&GS.radiationSymbolFound))magEl.classList.add('inactive');
+  // Set up letters
+  GS.deskLetters=(GD.CASE_LETTERS[GS.day]||[]).filter(l=>l.case_id===caseId&&(!l.flag||GS.getFlag(l.flag)));
+  const l1=document.getElementById('desk-letter1');
+  const l2=document.getElementById('desk-letter2');
+  l1.style.display=GS.deskLetters.length>0?'':'none';
+  l2.style.display=GS.deskLetters.length>1?'':'none';
+  l1.onclick=()=>deskLetter(0);
+  l2.onclick=()=>deskLetter(1);
+  const photoEl=document.getElementById('desk-photo');
+  photoEl.style.display=GD.PHOTO_CASES.includes(caseId)?'':'none';
+  photoEl.onclick=()=>deskPhoto();
+  showDeskWrap();
+  updateDeskHeader();
+  deskOverview();
+  initDrag();
+  renderEvidenceIcons();
+}
+
+function deskOverview(){
+  const cid=GS.currentCase;
+  if(!cid||!GD.CASES[cid]){setLeft('Investigation Desk','<p class="lp-placeholder">Click an item to investigate.</p>');return;}
+  const c=GD.CASES[cid];
+  const ev=GS.evidenceTotal(cid);
+  const met=ev>=c.min_evidence;
+  setLeft(c.title,
+    `<p class="lp-meta">${cid} — ${c.type||'Case'}</p>
+     <p>Evidence: <strong style="color:${met?'#44aa44':'#cc3333'}">${ev}/${c.min_evidence}</strong></p>
+     <p>Actions left: <strong>${GS.actionsLeft}</strong>&nbsp;&nbsp;Funds: <strong>₵${GS.funds}</strong></p>
+     <p style="margin-top:.8em;font-style:italic">Click a desk item to investigate.</p>
+     <p style="margin-top:.5em" class="lp-meta">• Note — Editor's memo<br>• Telephone — Call contacts<br>• Drawers — Bio files / Blotter<br>• Car key — Field visit<br>• Magnifier — Examine photo</p>`);
+  clearDeskBtns();
+  addDeskBtn('Wrap up &amp; publish →',()=>{enterPhase('PUBLISH_MENU');});
+  addDeskBtn('← Back to case list',()=>{enterPhase('CASE_SELECT');});
+}
+
+/* ── DESK PROPS ───────────────────────────────────────────── */
+function deskNote(){
+  playSfx('page');
+  const d=GS.day;
+  const memo=GD.EDITOR_MEMOS[d]||'Get to work.';
+  const notice=GD.GOVT_NOTICES[d];
+  let html=`<p class="lp-meta">— Handwritten, yellow notepad —</p><p>${memo}</p>`;
+  if(notice)html+=`<hr><p class="lp-meta">Government Notice:</p><p>${notice}</p>`;
+  setLeft('Editor\'s Memo — Day '+d,html);
+  clearDeskBtns();addDeskBtn('← Back',deskOverview);
+}
+
+function showMapZoom(){
+  const ov=document.createElement('div');
+  ov.id='map-zoom-overlay';
+  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:100000;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  ov.innerHTML='<img src="map.png" alt="Map of Port Callah" style="max-width:90vw;max-height:90vh;border-radius:6px;box-shadow:0 0 40px rgba(0,0,0,.6);cursor:default">';
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+function deskMap(){
+  playSfx('map');
+  setLeft('City Map — Port Callah',
+    `<img src="map.png" alt="Map of Port Callah" onclick="showMapZoom()" style="width:100%;border-radius:4px;margin-bottom:.6em;cursor:zoom-in">
+     <p class="lp-meta">— Port Callah, Free Port City —</p>
+     <p>Key locations:</p>
+     <p>▸ <strong>Callah Morning Ledger</strong> — Central District</p>
+     <p>▸ <strong>Port Callah Police HQ</strong> — Civic Quarter</p>
+     <p>▸ <strong>North Cove Harbor</strong> — North District</p>
+     <p>▸ <strong>Mountain Village</strong> — Northeast (30 min drive)</p>
+     <p>▸ <strong>City Hall</strong> — Civic Quarter</p>`);
+  clearDeskBtns();addDeskBtn('← Back',deskOverview);
+}
+
+function deskPhone(){
+  playSfx('switch');
+  const cid=GS.currentCase;
+  const d=GS.day;
+  const contacts=(GD.CONTACT_AVAILABILITY[d]||{})[cid]||[];
+  let rows='';
+  if(contacts.length){
+    rows+=`<li class="cat-hdr">DIRECT CONTACTS</li>`;
+    contacts.forEach(name=>{
+      rows+=`<li onclick="deskCallContact('${name.replace(/'/g,"\\'")}')"><span><strong>${name}</strong></span></li>`;
+    });
+  }
+  rows+=`<li class="cat-hdr">INFORMANT NETWORK</li>`;
+  rows+=`<li onclick="deskUseCi()"><span><strong>C.I.</strong>&ensp;<span style="color:#6a5038;font-size:.92em">Street Informant</span></span><span class="contact-cost">₵5 +Pressure</span></li>`;
+  rows+=`<li class="cat-hdr">EXPERT CONSULTANTS</li>`;
+  rows+=`<li onclick="deskUseExpert()"><span><strong>Expert Consultant</strong>&ensp;<span style="color:#6a5038;font-size:.92em">Analysis</span></span><span class="contact-cost">₵6</span></li>`;
+  setLeft('Telephone',
+    `<p class="lp-meta" style="margin-bottom:.55em">Select a contact (1 action each):</p>
+     <ul class="contact-list">${rows}</ul>`);
+  clearDeskBtns();addDeskBtn('← Hang up',deskOverview);
+}
+
+function getContactLines(name,d,cid){
+  const base=`${name}_${d}_${cid}`;
+  if(GD.CONTACT_LINES[base])return GD.CONTACT_LINES[base];
+  if(name==='Village Chief'&&d===1){
+    const k=GS.getFlag('warned_off_alien_story')?`${base}_warned`:`${base}_default`;
+    return GD.CONTACT_LINES[k]||[];
+  }
+  if(name==='City Hall Liaison Office'&&d===4){
+    const k=(GS.getFlag('used_magnifier_first')||GS.magnifierUsedD4)?`${base}_magnifier`:`${base}_no_magnifier`;
+    return GD.CONTACT_LINES[k]||[];
+  }
+  if(name==='Reunification Society Spokesperson'&&d===3){
+    const k=GS.getFlag('asked_CI_before_reunification')?`${base}_ci_first`:`${base}_default`;
+    return GD.CONTACT_LINES[k]||[];
+  }
+  return [];
+}
+
+function deskCallContact(name){
+  playSfx('click');
+  if(!GS.spendAction()){noActions();return;}
+  updateStatus();updateDeskHeader();
+  const d=GS.day;const cid=GS.currentCase;
+  // Track contact order flags
+  if(name==='City Hall Liaison Office'&&!GS.contactsUsedToday.includes('Village Chief'))
+    GS.setFlag('asked_official_before_chief',true);
+  if(name==='C.I.'&&!GS.contactsUsedToday.includes('Reunification Society Spokesperson'))
+    GS.setFlag('asked_CI_before_reunification',true);
+  if(cid==='D4C1'&&name==='City Hall Liaison Office'&&GS.magnifierUsedD4)
+    GS.setFlag('used_magnifier_first',true);
+  GS.contactsUsedToday.push(name);
+  const lines=getContactLines(name,d,cid);
+  if(!lines.length){
+    setLeft(name,`<p>${name} has nothing to say about this case right now.</p>`);
+    clearDeskBtns();addDeskBtn('← Back',()=>deskPhone());return;
+  }
+  // Set flags from lines
+  lines.forEach(ln=>{if(ln.sets_flag)GS.setFlag(ln.sets_flag,true);});
+  // Show dialogue
+  let html=`<p class="lp-meta">${name}</p>`;
+  lines.forEach((ln,li)=>{html+=evLine(cid,ln,li,name);});
+  html+=`<hr><p class="lp-meta" style="font-size:.85em">Drag a dashed statement onto the Evidence Board to file it.</p>`;
+  setLeft(name,html);
+  clearDeskBtns();
+  // D2C3 Thomas Finch bribe
+  if(name==='Thomas Finch'&&cid==='D2C3'){
+    offerFinchBribeButtons();
+    return;
+  }
+  // D4C1 military bribe check
+  if(GS.getFlag('offered_bribe_military')&&!GS.getFlag('bribe_military_accepted')){
+    addDeskSep('── BRIBE OFFER ──');
+    enterPhase('BRIBE');return;
+  }
+  addDeskBtn('← Back to telephone',deskPhone);
+}
+
+function deskUseCi(){
+  playSfx('click');
+  if(GS.funds<5){setLeft('C.I.','<p>You can\'t afford the C.I.\'s fee (₵5) right now.</p>');clearDeskBtns();addDeskBtn('← Back',deskOverview);return;}
+  if(!GS.spendAction()){noActions();return;}
+  GS.funds-=5;GS.applyStatDelta(0,1,0);updateStatus();updateDeskHeader();
+  GS.contactsUsedToday.push('C.I.');
+  if(GS.currentCase==='D3C2')GS.setFlag('asked_CI_before_reunification',true);
+  const key=`C.I._${GS.day}_${GS.currentCase}`;
+  const lines=GD.CONTACT_LINES[key]||[];
+  if(!lines.length){
+    setLeft('C.I. (₵5, +1 Pressure)','<p>The informant has nothing concrete on this case right now.</p>');
+    clearDeskBtns();addDeskBtn('← Back',deskOverview);return;
+  }
+  lines.forEach(ln=>{if(ln.sets_flag)GS.setFlag(ln.sets_flag,true);});
+  const cid=GS.currentCase;
+  let html=`<p class="lp-meta">C.I. — Street Informant (₵5, +1 Pressure applied)</p>`;
+  lines.forEach((ln,li)=>{html+=evLine(cid,ln,li,'ci');});
+  html+=`<hr><p class="lp-meta" style="font-size:.85em">Drag a dashed line onto the Evidence Board to file it.</p>`;
+  setLeft('C.I. Network',html);
+  clearDeskBtns();
+  addDeskBtn('← Back',deskOverview);
+}
+
+function deskUseExpert(){
+  playSfx('click');
+  if(GS.funds<6){setLeft('Expert','<p>Not enough funds (₵6 required).</p>');clearDeskBtns();addDeskBtn('← Back',deskOverview);return;}
+  if(!GS.spendAction()){noActions();return;}
+  GS.funds-=6;updateStatus();updateDeskHeader();
+  const cid=GS.currentCase;
+  const results={
+    D1C1:"An expert in local law confirms: citizen vigilante activity is legal in Port Callah provided no weapons are used.",
+    D1C2:"A meteorologist confirms: coastal mountain terrain fog is entirely normal. There is no meteorological evidence for anomalous activity.",
+    D2C1:"A pharmacist confirms the hospital Laudanum record matches the prescription date. The timeline for the 'kidnapping' is almost certainly false.",
+    D4C1:"A maritime expert: 'That paint overlay on the hull registration is recent — less than a month old. Someone didn't want the original flag seen.'",
+    D6C1:"A physicist: 'This radiation warning symbol is consistent with handling of radioactive materials. Someone wanted it handled carefully.'",
+  };
+  const result=results[cid]||"The expert reviews the available materials. The evidence you've gathered is solid but not yet conclusive.";
+  const sourceMap={D1C1:'expert_D1C1',D1C2:'expert_D1C2',D2C1:'expert_D2C1',D4C1:'expert_D4C1',D6C1:'expert_D6C1'};
+  const tagMap={D1C1:'Pro',D1C2:'Con',D2C1:'Con',D4C1:'Pro',D6C1:'Pro'};
+  if(sourceMap[cid])GS.addEvidence(cid,tagMap[cid]||'Pro','E2',sourceMap[cid]);
+  setLeft('Expert Consultant (₵6)',`<p>${result}</p>`);
+  clearDeskBtns();addDeskBtn('← Continue',deskOverview);
+}
+
+function deskMagnifier(){
+  playSfx('magnifier');
+  const cid=GS.currentCase;
+  const mag=document.getElementById('magnifier');
+  if(mag.classList.contains('inactive')){
+    setLeft('Magnifying Glass','<p style="color:#888">Examine a photograph first to unlock the magnifier.</p>');
+    clearDeskBtns();addDeskBtn('← Back',deskOverview);return;
+  }
+  if(!GS.spendAction()){noActions();return;}
+  if(!GS.getFlag('magnifier_unlocked')){
+    if(GS.funds<5){setLeft('Magnifying Glass','<p>You need ₵5 to unlock the magnifying glass.</p>');clearDeskBtns();addDeskBtn('← Back',deskOverview);return;}
+    GS.funds-=5;GS.setFlag('magnifier_unlocked',true);
+  }
+  updateStatus();updateDeskHeader();
+  mag.classList.add('used');mag.classList.remove('inactive');
+  let result='';let photoSrc='';
+  if(cid==='D4C1'){
+    GS.magnifierUsedD4=true;GS.setFlag('used_magnifier_first',true);
+    result="You examine the ship photograph carefully. The hull registration number is partially obscured with fresh paint. Underneath, faint letters in a different style. This is not a Vodrenian ship — or at least, it wasn't painted as one until recently.";
+    GS.addEvidence(cid,'Pro','E2','magnifier_D4');
+    photoSrc=GD.CASE_PHOTOS_MAGNIFIED[cid]||'';
+  } else if(cid==='D2C1'){
+    result="You examine the witness sketch of the 'kidnapping' scene. The hair color of the men described doesn't match the description in Lulu Qi's letter. Minor discrepancy — but it's there.";
+    GS.addEvidence(cid,'Con','E1','magnifier_D2C1');
+  } else if(cid==='D6C1'){
+    result="You examine the torn scrap of packaging under the glass. The trefoil symbol is printed, not hand-drawn — consistent with an official radiation-hazard marking. It's very likely genuine. It's not proof of what was inside the crate, though — just that someone wanted it handled carefully.";
+    GS.addEvidence(cid,'Pro','E1','magnifier_D6C1');
+  } else {
+    result=`You use the magnifying glass on available materials. Nothing immediately stands out beyond what you already know.`;
+  }
+  const photoHtml=photoSrc?`<img src="${photoSrc}" alt="Magnified case photo" style="display:block;width:100%;max-width:280px;margin:.6em auto;image-rendering:pixelated;border:2px solid #6a4a28;box-shadow:2px 3px 6px rgba(0,0,0,.35)">`:'';
+  setLeft('Magnifying Glass',`${photoHtml}<p>${result}</p>`);
+  clearDeskBtns();addDeskBtn('← Continue',deskOverview);
+}
+
+function deskCarKey(){
+  playSfx('carkey');
+  const cid=GS.currentCase;
+  const hasFieldVisit=cid==='D3C1'||cid==='D6C1';
+  if(!hasFieldVisit){
+    setLeft('Car Key',`<p>Your car is parked outside.</p><p style="margin-top:.6em;color:#8a5828">No field visit is available for this case.</p>`);
+    clearDeskBtns();addDeskBtn('← Back',deskOverview);return;
+  }
+  const cost=8;
+  setLeftRaw(`<div class="lp-title">Car Key</div><div class="lp-body">
+    <p>Your car is parked outside. A field visit could uncover evidence you can't reach from here.</p>
+    <div class="confirm-box">
+      <p>Conduct a field visit?<br><span style="color:#8a5828">Cost: <strong>₵${cost}</strong></span></p>
+      <div class="confirm-btns">
+        <button class="confirm-btn" onclick="doFieldVisit()">YES, GO</button>
+        <button class="confirm-btn" onclick="playSfx('switch');deskOverview()">NOT NOW</button>
+      </div>
+    </div></div>`);
+  clearDeskBtns();
+}
+
+function doFieldVisit(){
+  playSfx('switch');
+  const cid=GS.currentCase;
+  if(GS.funds<8){setLeft('Car Key','<p style="color:#cc6644">Not enough funds (₵8 required).</p>');clearDeskBtns();addDeskBtn('← Back',deskOverview);return;}
+  if(!GS.spendAction()){noActions();return;}
+  GS.funds-=8;updateStatus();updateDeskHeader();
+  setMusic('field');
+  if(cid==='D3C1'){
+    GS.dialogueNode='D3_OldWang_Stage1';
+    setLeft('Field Visit — Mountain Village',`<p>You take the winding road northeast out of Port Callah. The fog thickens as you climb. At the edge of the village, an old farmer waves you over.</p>
+     <img src="case-photos/D3C1-field-visit.png" alt="Mountain village cottage" style="display:block;width:100%;max-width:280px;margin:.6em auto;border:2px solid #6a4a28;box-shadow:2px 3px 6px rgba(0,0,0,.35)">`);
+    clearDeskBtns();addDeskBtn('Enter dialogue →',()=>enterPhase('FIELD_DIALOGUE'));
+    return;
+  }
+  if(cid==='D6C1'){
+    GS.dialogueNode='D6_Wendell_callback';
+    GS.radiationSymbolFound=false;
+    setLeft('Field Visit — Mountain Village (Day 6)',`<p>The fog is noticeably thicker today. You drive up the same road. Wendell is at his gate.</p>`);
+    clearDeskBtns();addDeskBtn('Enter dialogue →',()=>enterPhase('FIELD_DIALOGUE'));
+    return;
+  }
+}
+
+// D4C1 warhead field visit (from desk photo click → but actually triggered from case investigation in the original)
+// In HTML version: car key on D4C1 triggers the warhead glimpse
+function deskCarKeyD4(){
+  playSfx('carkey');
+  if(GS.funds<8){setLeft('Car Key','<p>Not enough funds (₵8 required).</p>');clearDeskBtns();addDeskBtn('← Back',deskOverview);return;}
+  if(!GS.spendAction()){noActions();return;}
+  GS.funds-=8;updateStatus();
+  setMusic('field');
+  if(GS.contactsUsedToday.includes('City Hall Liaison Office')){
+    showPaper();setBg('');
+    setScreen('Field Visit — North Cove Harbor',
+      `<p>You've already contacted City Hall today — by the time you reach the harbor perimeter, officials are waiting. They redirect you politely. All you see are crates labeled 'FRESH PRODUCE.'</p>
+       <img src="case-photos/D4C1-fresh-produce.png" alt="Crates labeled fresh produce" style="display:block;width:100%;max-width:320px;margin:.6em auto;border:2px solid #6a4a28;box-shadow:2px 3px 6px rgba(0,0,0,.35)">`);
+    addBtn('← Continue',()=>{enterPhase('CASE_SELECT');});
+  } else {
+    GS.setFlag('caught_with_warhead_glimpse',true);
+    GS.addEvidence('D4C1','Pro','E2','field_visit_D4C1');
+    updateDeskHeader();
+    showPaper();setBg('');
+    setScreen('Field Visit — North Cove Harbor',
+      `<p>No one expects you. You slip past the perimeter in the fog. For a moment, between two cranes, you see the shape of something under canvas — elongated, conical. Like a warhead. Then a guard spots you.</p>
+       <img src="case-photos/D4C1-warhead-glimpse.png" alt="Conical object under canvas at the dock" style="display:block;width:100%;max-width:320px;margin:.6em auto;border:2px solid #6a4a28;box-shadow:2px 3px 6px rgba(0,0,0,.35)">`);
+    addBtn('You are detained by the officers →',()=>enterPhase('D4_WARHEAD'));
+  }
+}
+
+function deskBio(){
+  playSfx('click');
+  const names=Object.keys(GD.MORGUE_PROFILES).sort();
+  let rows='';
+  names.forEach(n=>{rows+=`<li onclick="playSfx('switch');showProfile('${n.replace(/'/g,"\\'")}','desk')">${n}</li>`;});
+  setLeft('Biographical Files',
+    `<p class="lp-meta">Persons of interest:</p>
+     <ul class="contact-list">${rows}</ul>`);
+  clearDeskBtns();addDeskBtn('← Back',deskOverview);
+}
+
+function deskBlotter(){
+  playSfx('click');
+  const d=GS.day;
+  const text=GD.BLOTTER_TEXTS[d]||'(No current blotter entries.)';
+  const entries=GD.POLICE_BLOTTER_EVIDENCE[d]||[];
+  let html=`<p class="lp-meta">Police Blotter — Day ${d}</p><p>${text}</p>`;
+  const cid=GS.currentCase;
+  if(entries.length){
+    html+=`<hr><p class="lp-meta" style="font-size:.85em">Drag a dashed line onto the Evidence Board to file it.</p>`;
+    entries.forEach((e,li)=>{html+=evLine(e.case_id,e,li,'blotter_'+d);});
+  }
+  setLeft('Police Blotter',html);
+  clearDeskBtns();
+  addDeskBtn('← Back',deskOverview);
+}
+
+function offerFinchBribeButtons(){
+  addDeskBtn('✅ Accept deal (₵12 — publish alien yeast story)',()=>{
+    GS.funds+=12;GS.setFlag('alien_bread_bribe_accepted',true);GS.applyAxis(0,0,1);
+    GS.addEvidence('D2C3','Neutral','E1','bribe_accept');updateStatus();updateDeskHeader();
+    setLeft('Deal Accepted',`<p>You accept the offer. Thomas Finch beams. ₵12 added to your account.</p><p>The 'extraterrestrial yeast' story will run in tomorrow's paper.</p>`);
+    clearDeskBtns();addDeskBtn('← Continue',deskOverview);
+  });
+  addDeskBtn('❌ Decline the offer',()=>{
+    GS.applyAxis(0,0,-1);
+    setLeft('Offer Declined',`<p>You decline politely. Thomas Finch shrugs and leaves. No story, no funds.</p>`);
+    clearDeskBtns();addDeskBtn('← Continue',deskOverview);
+  });
+}
+
+function deskLetter(idx){
+  playSfx('page');
+  const letter=GS.deskLetters[idx];
+  if(!letter)return;
+  const cid=GS.currentCase;
+  let html=`<p class="lp-meta">From: ${letter.sender}</p>`;
+  letter.lines.forEach((ln,li)=>{html+=evLine(cid,ln,li,'letter_'+letter.sender);});
+  setLeft('Letter — '+letter.sender,html);
+  clearDeskBtns();
+  if(letter.sender.startsWith('Thomas Finch')&&cid==='D2C3'){
+    offerFinchBribeButtons();
+    addDeskBtn('← Back',deskOverview);
+    return;
+  }
+  html+=`<hr><p class="lp-meta" style="font-size:.85em">Drag a dashed line onto the Evidence Board to file it.</p>`;
+  setLeft('Letter — '+letter.sender,html);
+  addDeskBtn('← Back',deskOverview);
+}
+
+function deskPhoto(){
+  playSfx('page');
+  GS.deskPhotoClicked=true;
+  const mag=document.getElementById('magnifier');
+  mag.classList.remove('inactive');
+  const photoSrc=GD.CASE_PHOTOS[GS.currentCase];
+  const photoHtml=photoSrc?`<img src="${photoSrc}" alt="Case photo" style="display:block;width:100%;max-width:280px;margin:.6em auto;image-rendering:pixelated;border:2px solid #6a4a28;box-shadow:2px 3px 6px rgba(0,0,0,.35)">`:'';
+  setLeft('Photograph',
+    `<p class="lp-meta">Case photo — ${GS.currentCase}</p>
+     ${photoHtml}
+     <p>You examine the photograph. The magnifying glass on your desk may reveal more detail.</p>
+     <div class="evidence-line">🔍 The magnifier is now available.</div>`);
+  clearDeskBtns();
+  addDeskBtn('🔍 Examine with magnifier',()=>deskMagnifier());
+  addDeskBtn('← Back',deskOverview);
+}
+
+function deskEvidenceBoard(){
+  playSfx('click');
+  const cid=GS.currentCase;
+  const evList=GS.evidenceLog[cid]||[];
+  const total=GS.evidenceTotal(cid);
+  const min=GD.CASES[cid]?.min_evidence||0;
+  let html=`<p class="lp-meta">Evidence Board — ${cid}</p>
+    <p>Score: <strong style="color:${total>=min?'#44aa44':'#cc3333'}">${total}/${min}</strong> required</p><hr>`;
+  if(!evList.length){html+=`<p style="color:#9a8a74;font-style:italic">(No evidence collected yet.)</p>`;}
+  else{evList.forEach(e=>{
+    const col=e.tag==='Pro'?'#44aa44':e.tag==='Con'?'#cc4444':'#888888';
+    html+=`<div class="evidence-line"><span style="color:${col}">▸ [${e.tag}/${e.tier}] +${e.score}</span> <em style="font-size:.9em">${e.source}</em></div>`;
+  });}
+  setLeft('Evidence Board',html);
+  clearDeskBtns();addDeskBtn('← Back',deskOverview);
+}
+
+function noActions(){
+  showPaper();setBg('');
+  setScreen('No Actions Remaining','<p class="warn">You have used all 4 actions for today.</p><p>Wrap up and move to publish decisions.</p>');
+  addBtn('← Back to office',()=>enterPhase('CASE_SELECT'));
+}
+
+/* ── BRIBE OFFER ──────────────────────────────────────────── */
+function phaseBribe(){
+  showPaper();setBg('');
+  setScreen('Bribe Offer — Military Liaison',
+    `<p>"Let me wire some research funds to your account. ₵8. Just let this story sit for a bit."</p>
+     <p class="dim">Do you accept?</p>`);
+  addBtn('Accept (₵8 added — agree to sit on D4C1)',()=>{
+    GS.funds+=8;GS.setFlag('bribe_military_accepted',true);GS.applyAxis(0,0,1);
+    updateStatus();
+    setScreen('Bribe Accepted','<p>Money received. You don\'t feel great about it.</p>');
+    clearBtns();addBtn('← Continue',()=>{showDeskForCase(GS.currentCase);deskOverview();});
+  });
+  addBtn('Decline the offer',()=>{
+    GS.applyAxis(0,0,-1);
+    setScreen('Offer Declined','<p>"Your loss," the Liaison says, and hangs up.</p>');
+    clearBtns();addBtn('← Continue',()=>{showDeskForCase(GS.currentCase);deskOverview();});
+  });
+}
+
+/* ── D4 WARHEAD ───────────────────────────────────────────── */
+function phaseD4Warhead(){
+  showPaper();setBg('');
+  setScreen('Field Visit Incident — North Cove Harbor',
+    `<p>A guard blocks your path. Two others appear from the shadows. A senior officer arrives within minutes — plainclothes, but the posture gives him away.</p>
+     <p>"You were not supposed to see that," he says quietly. "We can handle this two ways. You keep what you saw to yourself — go home, write something else. Or we take you in until the week is over." He pauses. "Your choice."</p>
+     <p class="dim">What you glimpsed: a conical metal object under canvas, consistent with a warhead casing. You have no photograph. Your word against theirs.</p>`);
+  addBtn('Comply — agree to stay silent (kept free, can\'t publish this)',()=>{
+    GS.setFlag('complies_with_silence',true);GS.setFlag('detained_d4',false);GS.applyAxis(0,-1,0);
+    const out=GD.OUTCOMES.D4C1_comply;
+    GS.applyStatDelta(out.credibility,out.pressure,out.stability);
+    for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+    GS.newspaperStack.push({headline:out.headline,body:out.body});
+    setScreen('You agreed to stay silent.',`<p>${out.body}</p><p>You return to the office. The week continues. You will never publish what you saw here.</p>`);
+    clearBtns();addBtn('Continue →',()=>endDay());
+  });
+  addBtn('Refuse — you won\'t be silenced (confined to home until Day 7)',()=>{
+    GS.setFlag('detained_d4',true);GS.applyAxis(0,1,0);
+    const out=GD.OUTCOMES.D4C1_refuse;
+    GS.applyStatDelta(out.credibility,out.pressure,out.stability);
+    for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+    setScreen('You refused.',`<p>${out.body}</p><p>You will not work again until Day 7. The detained track begins.</p>`);
+    clearBtns();addBtn('Continue →',()=>endDay());
+  });
+}
+
+/* ── FIELD DIALOGUE ───────────────────────────────────────── */
+function phaseFieldDialogue(){
+  setMusic('field');
+  const key=GS.dialogueNode;
+  if(!key||!GD.DIALOGUE_TREES[key]){
+    showPaper();setBg('');
+    setScreen('Field Visit Complete','<p>(Dialogue complete.)</p>');
+    addBtn('← Return to office',()=>enterPhase('CASE_SELECT'));return;
+  }
+  const node=GD.DIALOGUE_TREES[key];
+  showPaper();setBg('');
+  setScreen(`${node.speaker} — ${node.stage}`,
+    `<p><em>"${node.opening}"</em></p><hr><p><strong>Your response:</strong></p>`);
+  node.choices.forEach(ch=>{
+    addBtn(ch.label,()=>makeDialogueChoice(ch));
+  });
+}
+
+function makeDialogueChoice(choice){
+  const sig=choice.signal||'';
+  if(sig==='Pathos'){GS.pathosCount++;GS.applyAxis(0,0,-1);}
+  else if(sig==='Logos'){GS.logosCount++;GS.applyAxis(1,0,0);}
+  else if(sig==='Skepticism'){GS.skepticismCount++;GS.applyAxis(0,-1,0);}
+  const caseFv=GS.day===3?'D3C1':'D6C1';
+  const ev=choice.evidence;
+  if(ev&&(ev.tag==='Pro'||ev.tag==='Con'))GS.addEvidence(caseFv,ev.tag,ev.tier||'E1',ev.source);
+  if(choice.cost>0&&GS.funds>=choice.cost)GS.funds-=choice.cost;
+  if(choice.sets_flag)GS.setFlag(choice.sets_flag,true);
+  updateStatus();
+  showPaper();setBg('');
+  setScreen(choice.label,`<p><strong>You said:</strong> <em>"${choice.label}"</em></p><hr><p>${choice.response}</p>`);
+  clearBtns();
+  const next=choice.next;
+  if(next){
+    GS.dialogueNode=next;
+    addBtn('Continue →',()=>enterPhase('FIELD_DIALOGUE'));
+  } else {
+    if(GS.day===6){
+      GS.radiationSymbolFound=true;
+      document.getElementById('magnifier').classList.remove('inactive');
+    }
+    addBtn('Return to office →',()=>enterPhase('CASE_SELECT'));
+  }
+}
+
+/* ── PUBLISH MENU ─────────────────────────────────────────── */
+function phasePublishMenu(){
+  setMusic('factcheck');
+  showPaper();setBg('');
+  // Special: Day 5 → D5 sequence after all cases processed
+  if(GS.day===5&&GS.publishIndex>=GS.casesToPublish.length){
+    enterPhase('D5_SEQUENCE');return;
+  }
+  if(GS.casesToPublish.length===0||GS.publishIndex>=GS.casesToPublish.length){
+    finishPublishPhase();return;
+  }
+  const cid=GS.casesToPublish[GS.publishIndex];
+  GS.currentCase=cid;
+  const c=GD.CASES[cid];
+  const ev=GS.evidenceTotal(cid);
+  const min=c.min_evidence;
+  const met=ev>=min;
+  const evList=GS.evidenceLog[cid]||[];
+  let evHtml='';
+  evList.forEach(e=>{
+    const col=e.tag==='Pro'?'#44aa44':e.tag==='Con'?'#cc4444':'#888888';
+    evHtml+=`<p style="color:${col};font-size:.9em">▸ ${e.tag}/${e.tier} +${e.score} — ${e.source}</p>`;
+  });
+  if(!evHtml)evHtml='<p class="dim">(none)</p>';
+  setScreen(`Editorial Decision — ${cid}`,
+    `<p class="head">${c.title}</p>
+     <p>Evidence: <strong style="color:${met?'#44aa44':'#cc3333'}">${ev}/${min}</strong> ${met?'✓ threshold met':'⚠ below minimum'}</p>
+     <hr>
+     <p><strong>Evidence on file:</strong></p>${evHtml}`);
+  switch(cid){
+    case 'D1C1':
+      addBtn('PUBLISH — the vigilante story',()=>publishCase('D1C1_publish','D1C1'));
+      addBtn('SUPPRESS — kill the story',()=>publishCase('D1C1_suppress','D1C1'));break;
+    case 'D1C2':
+      addBtn('PUBLISH — alien village tourist boom',()=>publishCase('D1C2_publish','D1C2'));
+      addBtn('SUPPRESS the story',()=>suppressD1C2());break;
+    case 'D2C1':
+      addBtn('PUBLISH — Jonathan Wright abduction story',()=>publishCase('D2C1_publish','D2C1'));
+      addBtn('SUPPRESS — too much contradicting evidence',()=>publishCase('D2C1_suppress','D2C1'));break;
+    case 'D2C2':
+      addBtn('PUBLISH — the defector story',()=>publishCase('D2C2_publish','D2C2'));
+      addBtn('SUPPRESS',()=>publishCase('D2C2_suppress','D2C2'));break;
+    case 'D2C3':
+      if(GS.getFlag('alien_bread_bribe_accepted')){
+        addBtn('PUBLISH — the alien yeast story',()=>publishCase('D2C3_accept_publish','D2C3'));
+        addBtn('DECLINE to publish (despite accepting the money)',()=>publishCase('D2C3_decline','D2C3'));
+      } else {GS.publishIndex++;phasePublishMenu();}break;
+    case 'D3C1':
+      addBtn('PUBLISH — mountain village feature',()=>{
+        GS.setFlag('d3c1_published',true);GS.alienCasesPublished++;checkForcedDayOff();
+        applyOutcome('D3C1_publish','D3C1');
+      });
+      addBtn('SUPPRESS — keep material for later',()=>publishCase('D3C1_suppress','D3C1'));break;
+    case 'D3C2':
+      enterPhase('PUBLISH_ANGLE');return;
+    case 'D4C1':
+      if(GS.getFlag('caught_with_warhead_glimpse')){
+        // Already handled — just advance
+        GS.publishIndex++;phasePublishMenu();
+      } else if(GS.getFlag('forced_day_off_d4')){
+        GS.publishIndex++;phasePublishMenu();
+      } else {
+        addBtn('PUBLISH — midnight ship story',()=>publishCase('D4C1_publish_no_evidence','D4C1'));
+        addBtn('SUPPRESS — not enough to go on',()=>publishCase('D4C1_suppress','D4C1'));
+      }break;
+    case 'D5C1':case 'D5C2':
+      GS.publishIndex++;phasePublishMenu();break;
+    case 'D6C1':
+      if(GS.radiationSymbolFound){enterPhase('D6_CHOICE');return;}
+      addBtn('PUBLISH — article based on available evidence',()=>{applyOutcomeSilent('D6C1_tang_photo','D6C1');finishPublishPhase();});
+      addBtn('SUPPRESS — hold all material',()=>{applyOutcomeSilent('D6C1_suppress','D6C1');finishPublishPhase();});break;
+    default:
+      GS.publishIndex++;phasePublishMenu();
+  }
+}
+
+function suppressD1C2(){
+  const key=GS.getFlag('asked_official_before_chief')?'D1C2_suppress_official_first':'D1C2_suppress_chief_first';
+  publishCase(key,'D1C2');
+}
+
+function checkForcedDayOff(){
+  let count=0;
+  if(GS.getFlag('alien_published_d1'))count++;
+  if(GS.getFlag('d2c3_published'))count++;
+  if(GS.getFlag('d3c1_published'))count++;
+  if(count>=3)GS.setFlag('forced_day_off_d4',true);
+}
+
+function publishCase(outKey,caseId){
+  applyOutcome(outKey,caseId);
+}
+
+// Queue a result for the end-of-day combined results page instead of
+// showing it immediately — all of today's editorial decisions get made
+// first, then everything is revealed together after printing.
+function queueResult(out){
+  if(!out)return;
+  GS.pendingResults.push({
+    headline:out.headline||'',body:out.body||'',
+    credibility:out.credibility||0,pressure:out.pressure||0,stability:out.stability||0
+  });
+}
+
+function applyOutcome(outKey,caseId){
+  const out=GD.OUTCOMES[outKey];
+  if(!out){GS.publishIndex++;phasePublishMenu();return;}
+  GS.applyStatDelta(out.credibility,out.pressure,out.stability);
+  const ax=out.axis||{};
+  GS.applyAxis(ax.a||0,ax.b||0,ax.c||0);
+  for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+  // Special alien published flags
+  if(caseId==='D1C2'&&out.sets_flags&&out.sets_flags.alien_published_d1){GS.alienCasesPublished++;checkForcedDayOff();}
+  if(caseId==='D2C3'&&out.sets_flags&&out.sets_flags.d2c3_published){GS.alienCasesPublished++;checkForcedDayOff();}
+  const published=!outKey.endsWith('_suppress')&&outKey!=='D2C3_decline';
+  GS.recordCaseResult(caseId,published);
+  if(out.headline&&!out.headline.startsWith('(no'))
+    GS.newspaperStack.push({headline:out.headline,body:out.body});
+  queueResult(out);
+  updateStatus();
+  // Move straight to the next decision — no interstitial. Results are
+  // all revealed together at the end of the publish phase.
+  GS.publishIndex++;
+  phasePublishMenu();
+}
+
+function applyOutcomeSilent(outKey,caseId){
+  const out=GD.OUTCOMES[outKey];
+  if(!out)return;
+  GS.applyStatDelta(out.credibility,out.pressure,out.stability);
+  const ax=out.axis||{};GS.applyAxis(ax.a||0,ax.b||0,ax.c||0);
+  for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+  const published=!outKey.endsWith('_suppress');
+  GS.recordCaseResult(caseId,published);
+  if(out.headline&&!out.headline.startsWith('(no'))
+    GS.newspaperStack.push({headline:out.headline,body:out.body});
+  queueResult(out);
+  updateStatus();
+}
+
+function phasePublishAngle(){
+  setMusic('factcheck');
+  showPaper();setBg('');
+  setScreen('Editorial Decision — D3C2',
+    `<p class="head">The Reunification Society</p>
+     <p>You have a story. But how do you frame it?</p>
+     <hr>
+     <p><strong>A)</strong> Lead with the funding doubts — the books don't add up.</p>
+     <p><strong>B)</strong> Sympathetic human-interest frame — ordinary people who want affordable groceries.</p>
+     <p><strong>C)</strong> Suppress — run nothing.</p>`);
+  addBtn('A) PUBLISH — Lead with funding doubts',()=>publishCase('D3C2_publish_funding','D3C2'));
+  addBtn('B) PUBLISH — Sympathetic human-interest frame',()=>publishCase('D3C2_publish_sympathetic','D3C2'));
+  addBtn('C) SUPPRESS — Kill the story',()=>publishCase('D3C2_suppress','D3C2'));
+}
+
+function phaseD5Sequence(){
+  setMusic('factcheck');
+  showPaper();setBg('');
+  const ev1=GS.evidenceTotal('D5C1');const ev2=GS.evidenceTotal('D5C2');
+  setScreen('Editorial Decisions — Day 5',
+    `<p>Two stories today. What you lead D5C1 with — and whether you publish D5C2 — determines the combined outcome.</p>
+     <hr>
+     <p>D5C1 (Vodrenian Frame-Up): Evidence <strong>${ev1}</strong> (need 3)</p>
+     <p>D5C2 (Bakery Owner): Evidence <strong>${ev2}</strong> (need 1)</p>`);
+  addSep('── D5C1: Choose your angle ──');
+  addBtn('D5C1: PUBLISH — lead with DRUG-CARGO angle (Vodrenia\'s claim)',()=>{GS.d5c1Decision='drugs';showD5C2Decision();});
+  addBtn('D5C1: PUBLISH — lead with SAILOR TESTIMONY + fireworks manifest',()=>{GS.d5c1Decision='sailors';showD5C2Decision();});
+  addBtn('D5C1: SUPPRESS (no ship story)',()=>{GS.d5c1Decision='suppress';showD5C2Decision();});
+}
+
+function showD5C2Decision(){
+  clearBtns();
+  addSep('── D5C2: Also decide on the bakery story ──');
+  addBtn('D5C2: PUBLISH the bakery story',()=>{GS.d5c2Decision='publish';resolveD5();});
+  addBtn('D5C2: SUPPRESS the bakery story',()=>{GS.d5c2Decision='suppress';resolveD5();});
+}
+
+function resolveD5(){
+  if(GS.d5c1Decision==='drugs'){GS.setFlag('d5c1_angle_drugs',true);GS.setFlag('d5c1_published',true);applyOutcomeSilent('D5C1_publish_drugs','D5C1');}
+  else if(GS.d5c1Decision==='sailors'){GS.setFlag('d5c1_angle_sailors',true);GS.setFlag('d5c1_published',true);applyOutcomeSilent('D5C1_publish_sailors','D5C1');}
+  else{GS.setFlag('d5c1_published',false);applyOutcomeSilent('D5C1_suppress','D5C1');}
+  if(GS.d5c2Decision==='publish'){
+    GS.setFlag('d5c2_published',true);
+    if(GS.getFlag('d5c1_angle_sailors'))applyOutcomeSilent('D5C2_publish_with_sailors','D5C2');
+    else if(GS.getFlag('d5c1_angle_drugs'))applyOutcomeSilent('D5C2_publish_with_drugs','D5C2');
+    else applyOutcomeSilent('D5C2_publish_alone','D5C2');
+  } else {
+    GS.setFlag('d5c2_published',false);applyOutcomeSilent('D5C2_suppress','D5C2');
+  }
+  if(!GS.getFlag('d5c1_published')&&!GS.getFlag('d5c2_published')){
+    GS.applyStatDelta(-2,0,-2);GS.applyAxis(0,-2,0);
+    GS.newspaperStack.push({headline:'—',body:'Neither story ran. The silence was noticed.'});
+    GS.pendingResults.push({headline:'—',body:'Neither story ran. The silence was noticed.',credibility:-2,pressure:0,stability:-2});
+  }
+  updateStatus();
+  finishPublishPhase();
+}
+
+function phaseD6Choice(){
+  setMusic('factcheck');
+  showPaper();setBg('');
+  const ev=GS.evidenceTotal('D6C1');
+  setScreen('Editorial Decision — D6C1: Tang\'s Final Invitation',
+    `<p>Evidence gathered: <strong>${ev}</strong> (need 3)</p>
+     <p>You have four options for what to submit today:</p>
+     <hr>
+     <p><strong>A)</strong> Publish the blurry photo of Tang and the white light.<br><em>Stays deliberately ambiguous.</em></p>
+     <p><strong>B)</strong> Submit the radiation symbol — <strong>SYMPATHETIC FRAME</strong><br><em>'A city's quiet burden: why Port Callah may have done what it did.'</em>${GS.stability<50?' <span class="good">(Low stability — sympathetic framing doubles the effect.)</span>':''}</p>
+     <p><strong>C)</strong> Submit the radiation symbol — <strong>ACCOUNTABILITY FRAME</strong><br><em>'Buried in the fog: what the government never told us.'</em>${GS.stability>=50?' <span class="warn">(High stability — sense of betrayal amplified. May trigger Reclamation Day.)</span>':''}</p>
+     <p><strong>D)</strong> Hold all materials — submit nothing.</p>`);
+  addBtn('A) Publish Tang\'s blurry photo',()=>{applyOutcomeSilent('D6C1_tang_photo','D6C1');finishPublishPhase();});
+  addBtn('B) Radiation symbol — sympathetic frame',()=>publishRadiationSympathetic());
+  addBtn('C) Radiation symbol — accountability frame',()=>publishRadiationAccountability());
+  addBtn('D) Hold all materials',()=>{applyOutcomeSilent('D6C1_suppress','D6C1');finishPublishPhase();});
+}
+
+function publishRadiationSympathetic(){
+  const out=Object.assign({},GD.OUTCOMES.D6C1_radiation_sympathetic);
+  let stab=out.stability;
+  if(GS.stability<50)stab=stab*2;
+  GS.applyStatDelta(out.credibility,out.pressure,stab);
+  GS.applyAxis(out.axis.a||0,out.axis.b||0,out.axis.c||0);
+  for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+  GS.recordCaseResult('D6C1',true);
+  GS.newspaperStack.push({headline:out.headline,body:out.body});
+  queueResult(Object.assign({},out,{stability:stab}));
+  updateStatus();finishPublishPhase();
+}
+
+function publishRadiationAccountability(){
+  const out=Object.assign({},GD.OUTCOMES.D6C1_radiation_accountability);
+  let stab=out.stability;
+  const amplified=GS.stability>=50;
+  if(amplified)stab=stab*2;
+  GS.applyStatDelta(out.credibility,out.pressure,stab);
+  GS.applyAxis(out.axis.a||0,out.axis.b||0,out.axis.c||0);
+  for(const k in out.sets_flags)GS.setFlag(k,out.sets_flags[k]);
+  if(amplified)GS.setFlag('reclamation_day_triggered',true);
+  GS.recordCaseResult('D6C1',true);
+  GS.newspaperStack.push({headline:out.headline,body:out.body});
+  queueResult(Object.assign({},out,{stability:stab}));
+  updateStatus();finishPublishPhase();
+}
+
+/* ── PRINTING / RESULTS ───────────────────────────────────── */
+function finishPublishPhase(){
+  setMusic('result');
+  showPrintingWrap();
+  const msg=GD.PRINTING_MESSAGES[GS.day]||GD.PRINTING_MESSAGES.default;
+  document.getElementById('printing-msg').textContent=msg;
+  setTimeout(showEveningScreen,5600);
+}
+
+function showEveningScreen(){
+  const d=GS.day;
+  if(d>=6){showResultsTypewriter();return;}
+  const eveningTexts={
+    1:"The city is quiet tonight. Independence Anniversary banners hang from every lamp post. You write up your notes and eat dinner alone.",
+    2:"The government's drug ordinance is the talk of the teahouses. You overhear two pharmacists arguing about it.",
+    3:"Fog has crept into the city's lower streets tonight. You can hear a ship horn somewhere in the distance, somewhere north of the main harbor.",
+    4:"You sleep lightly. Something about the shape under that canvas keeps surfacing in the half-dreams.",
+    5:"The city feels tense. People are talking in the streets. You notice military vehicles parked near the harbor bureau.",
+  };
+  showPaper();setBg('');
+  setScreen(`Evening — Day ${d}`,
+    `<p>${eveningTexts[d]||''}</p>
+     <hr>
+     <p class="dim">Credibility: ${GS.credibility} | Pressure: ${GS.pressure} | Stability: ${GS.stability} | Funds: ₵${GS.funds}</p>`);
+  addBtn(`Sleep — begin Day ${d+1} →`,()=>showResultsTypewriter());
+}
+
+function showResultsTypewriter(){
+  setMusic('result');
+  showPaper();setBg('');
+  setScreen(`Day ${GS.day} — Results`,'');
+  clearBtns();
+  const body=document.getElementById('paper-body');
+  const scroll=document.getElementById('paper-scroll');
+  body.innerHTML='';
+  const results=GS.pendingResults.slice();
+  const finish=()=>{GS.pendingResults=[];addBtn('Continue →',()=>endDay());};
+  if(!results.length){
+    const p=document.createElement('p');
+    p.className='result-line-body';p.textContent='No stories ran today.';
+    body.appendChild(p);finish();return;
+  }
+  const CHAR_MS=13,LINE_PAUSE_MS=220,STAT_STAGGER_MS=280,RESULT_PAUSE_MS=480;
+  function typeText(el,txt,done){
+    if(!txt){done();return;}
+    let ci=0;
+    const timer=setInterval(()=>{
+      ci++;
+      el.textContent=txt.substring(0,ci);
+      scroll.scrollTop=scroll.scrollHeight;
+      if(ci>=txt.length){clearInterval(timer);setTimeout(done,LINE_PAUSE_MS);}
+    },CHAR_MS);
+  }
+  let ri=0;
+  function nextResult(){
+    if(ri>=results.length){finish();return;}
+    const r=results[ri++];
+    const hEl=document.createElement('p');hEl.className='result-line-headline';
+    body.appendChild(hEl);
+    typeText(hEl,r.headline||'',()=>{
+      const bEl=document.createElement('p');bEl.className='result-line-body';
+      body.appendChild(bEl);
+      typeText(bEl,r.body||'',()=>{
+        const stats=[];
+        if(r.credibility)stats.push({label:'Credibility',val:r.credibility});
+        if(r.pressure)stats.push({label:'Pressure',val:r.pressure});
+        if(r.stability)stats.push({label:'Stability',val:r.stability});
+        if(!stats.length){setTimeout(nextResult,RESULT_PAUSE_MS);return;}
+        const statBox=document.createElement('div');statBox.className='result-stats';
+        body.appendChild(statBox);
+        let si=0;
+        function popNext(){
+          if(si>=stats.length){setTimeout(nextResult,RESULT_PAUSE_MS);return;}
+          const s=stats[si++];
+          const chip=document.createElement('span');
+          chip.className='result-stat-chip '+(s.val>=0?'pos':'neg');
+          chip.textContent=`${s.label} ${s.val>=0?'+':''}${s.val}`;
+          statBox.appendChild(chip);
+          scroll.scrollTop=scroll.scrollHeight;
+          setTimeout(popNext,STAT_STAGGER_MS);
+        }
+        popNext();
+      });
+    });
+  }
+  nextResult();
+}
+
+/* ── END DAY ──────────────────────────────────────────────── */
+function endDay(){
+  playSfx('switch');
+  updateStatus();
+  if(GS.credibility<=0){endGameCredibility();return;}
+  if(GS.checkSuspension()){endGameSuspension();return;}
+  const d=GS.day;
+  if(d>=6){showDay7();return;}
+  startDay(d+1);
+}
+
+function showDay7(){
+  // Calc alien story axis
+  let alienActions=0,totalActions=28-GS.actionsLeft;
+  ['D1C2','D2C3','D3C1','D6C1'].forEach(c=>{alienActions+=(GS.evidenceLog[c]||[]).length;});
+  if(totalActions>0&&alienActions/totalActions>0.5)GS.applyAxis(0,0,-2);
+  showPaper();setBg('');
+  const txt=GS.getFlag('reclamation_day_triggered')?GD.DAY7_RECLAMATION:GD.DAY7_STANDARD;
+  setScreen('Day 7','<pre style="white-space:pre-wrap;font-size:inherit;line-height:1.8">'+txt+'</pre>');
+  addBtn('See your ending →',()=>enterPhase('ENDING'));
+}
+
+function endGameCredibility(){
+  showPaper();setBg('');
+  setScreen('GAME OVER — THE PAPER CLOSES',
+    `<p>Credibility reached zero. The Callah Morning Ledger has been forced to shut its doors.</p>
+     <p>Whether through too many unchecked stories, too many silent days, or too much political accommodation — the readers stopped trusting the paper, and without readers, there is no paper.</p>
+     <p>Independence Anniversary Week ends without the Ledger.</p>`);
+  addBtn('Play Again',restart);
+}
+
+function endGameSuspension(){
+  showPaper();setBg('');
+  setScreen('GAME OVER — SUSPENDED',`<pre style="white-space:pre-wrap;font-size:inherit;line-height:1.8">${GD.DAY7_SUSPENSION}</pre>`);
+  addBtn('Play Again',restart);
+}
+
+/* ── ENDING ───────────────────────────────────────────────── */
+function phaseEnding(){
+  const code=GS.getPersonalityCode();
+  const name=GD.PERSONALITY_NAMES[code]||'Unknown';
+  const belief=GD.PERSONALITY_BELIEFS[code]||'';
+  const ending=GD.PERSONALITY_ENDINGS[code]||'';
+  const abou=GD.ABOU_LETTERS[code]||'';
+  showPaper();setBg('');
+  let body=`<p class="head">${name}</p>
+    <p><em>${belief}</em></p>
+    <hr>
+    <p>${ending}</p>
+    <hr>
+    <p style="color:#a0c8e8">A letter arrives from Abou:</p>
+    <p><em>${abou}</em></p>`;
+  if(GS.getFlag('showed_concern_for_tang')){
+    body+=`<hr><p>${GD.TANG_CODA}</p>`;
+  }
+  body+=`<hr>
+    <p class="dim">INK AND ALIBI | Port Callah, October 10–16</p>
+    <p class="dim">Credibility: ${GS.credibility} | Pressure: ${GS.pressure} | Stability: ${GS.stability} | Funds: ₵${GS.funds}</p>
+    <p class="dim">Axes: A=${GS.axisA.toFixed(1)} B=${GS.axisB.toFixed(1)} C=${GS.axisC.toFixed(1)}</p>
+    <p class="dim">Type: ${code} (${name})</p>`;
+  setScreen('YOUR ENDING',body);
+  addBtn('Play Again',restart);
+}
+
+function restart(){
+  GS.credibility=50;GS.pressure=2;GS.stability=70;GS.funds=8;
+  GS.day=1;GS.actionsLeft=4;
+  GS.axisA=0;GS.axisB=0;GS.axisC=0;
+  GS.pathosCount=0;GS.logosCount=0;GS.skepticismCount=0;
+  GS.consecutiveUnderMin=0;
+  GS.contactsUsedToday=[];
+  GS.evidenceLog={};GS.claimedSources=new Set();
+  GS.mailQueue=[];GS.casesPublishedThisRun={};GS.alienCasesPublished=0;
+  GS.newspaperStack=[];GS.pendingResults=[];GS.dayCases=[];GS.casesToPublish=[];GS.publishIndex=0;
+  GS.currentCase='';GS.dialogueNode='';
+  GS.d5c1Decision='';GS.d5c2Decision='';
+  GS.magnifierUsedD4=false;GS.radiationSymbolFound=false;
+  GS.deskPhotoClicked=false;GS.morningMailList=[];GS.deskLetters=[];
+  for(const k in GS.flags)GS.flags[k]=false;
+  updateStatus();
+  enterPhase('TITLE');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DRAG LOGIC (desk items)
+══════════════════════════════════════════════════════════════ */
+const DESK_DRAG_BOUNDS={l:40,t:46,r:98,b:93};
+
+// Generic free-drag behavior (used by letters/photo and evidence icons).
+// onMoveEnd(leftPct,topPct), if given, is called after each drag update
+// so callers can persist the new position.
+function attachDrag(el,clickFn,onMoveEnd){
+  const scene=document.getElementById('scene');
+  const DESK=DESK_DRAG_BOUNDS;
+  let dragging=false,sx,sy,origL,origT;
+  el.onmousedown=e=>{
+    if(e.button!==0)return;
+    e.preventDefault();dragging=false;
+    sx=e.clientX;sy=e.clientY;
+    origL=parseFloat(el.style.left);
+    origT=parseFloat(el.style.top);
+    const scR=scene.getBoundingClientRect();
+    function onMove(ev){
+      const dx=(ev.clientX-sx)/scR.width*100;
+      const dy=(ev.clientY-sy)/scR.height*100;
+      if(!dragging&&Math.abs(dx)+Math.abs(dy)>.35){dragging=true;el.classList.add('is-dragging');}
+      if(!dragging)return;
+      const elW=el.offsetWidth/scR.width*100;
+      const elH=el.offsetHeight/scR.height*100;
+      const newL=Math.max(DESK.l,Math.min(DESK.r-elW,origL+dx));
+      const newT=Math.max(DESK.t,Math.min(DESK.b-elH,origT+dy));
+      el.style.left=newL+'%';
+      el.style.top=newT+'%';
+      if(onMoveEnd)onMoveEnd(newL,newT);
+    }
+    function onUp(){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      el.classList.remove('is-dragging');
+      if(!dragging&&clickFn)clickFn();
+      dragging=false;
+    }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  };
+}
+
+function initDrag(){
+  const clickFns={
+    'desk-letter1':()=>deskLetter(0),
+    'desk-letter2':()=>deskLetter(1),
+    'desk-photo':()=>deskPhoto(),
+  };
+  document.querySelectorAll('.draggable').forEach(el=>{
+    attachDrag(el,clickFns[el.id]||null);
+  });
+}
+
+/* Override car key for D4C1 special case */
+const _origCarKey=window.deskCarKey;
+window.deskCarKey=function(){
+  if(GS.currentCase==='D4C1'){deskCarKeyD4();}
+  else{
+    playSfx('carkey');
+    const cid=GS.currentCase;
+    const hasFieldVisit=cid==='D3C1'||cid==='D6C1';
+    if(!hasFieldVisit){
+      setLeft('Car Key',`<p>Your car is parked outside.</p><p style="margin-top:.6em;color:#8a5828">No field visit is available for this case.</p>`);
+      clearDeskBtns();addDeskBtn('← Back',deskOverview);return;
+    }
+    setLeftRaw(`<div class="lp-title">Car Key</div><div class="lp-body">
+      <p>Your car is parked outside. A field visit could uncover evidence you can't reach from here.</p>
+      <div class="confirm-box">
+        <p>Conduct a field visit?<br><span style="color:#8a5828">Cost: <strong>₵8</strong></span></p>
+        <div class="confirm-btns">
+          <button class="confirm-btn" onclick="doFieldVisit()">YES, GO</button>
+          <button class="confirm-btn" onclick="playSfx('switch');deskOverview()">NOT NOW</button>
+        </div>
+      </div></div>`);
+    clearDeskBtns();
+  }
+};
+
+/* ── INIT ─────────────────────────────────────────────────── */
+updateStatus();
+enterPhase('TITLE');
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     EDIT MODE — append ?edit=1 to the URL to enable.
+     Drag any positioned element to move it, shift+drag its bottom-right
+     area to resize it. A panel lists the live left/top/width/height (%)
+     for every element you've touched, ready to copy back into the HTML.
+═══════════════════════════════════════════════════════════════ -->
+<style>
+#debug-coords{
+  position:fixed;bottom:6px;right:6px;z-index:99999;
+  background:rgba(0,0,0,.75);color:#0f0;
+  font-family:'Courier New',Courier,monospace;font-size:11px;
+  padding:4px 8px;border:1px solid #0f0;pointer-events:none;
+  white-space:pre;line-height:1.4;
+}
+#edit-panel{
+  position:fixed;top:36px;right:0;width:340px;max-height:calc(100vh - 42px);
+  overflow:auto;background:rgba(10,8,4,.95);color:#c8a860;
+  font-family:'Courier New',Courier,monospace;font-size:11px;line-height:1.4;
+  border-left:1px solid #6a4818;border-bottom:1px solid #6a4818;
+  padding:8px;z-index:99999;
+}
+#edit-panel .hdr{font-weight:bold;color:#d4a84e;margin-bottom:6px}
+#edit-panel button{
+  font-family:inherit;font-size:11px;padding:3px 9px;margin-right:6px;
+  cursor:pointer;background:#1a1208;color:#c8a060;border:1px solid #6a4818;
+}
+#edit-panel button:hover{background:#2a1e08;color:#e8d098}
+#edit-log{white-space:pre-wrap;word-break:break-all;font-size:10px;color:#a8985c;margin-top:8px}
+.edit-target{outline:1px dashed rgba(255,200,80,.55) !important;cursor:move !important}
+</style>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('edit') !== '1') return;
+
+  // Infinite funds while in edit mode: pin GS.funds to a large number
+  // every time the status bar refreshes (covers all spend paths).
+  const origUpdateStatus = updateStatus;
+  updateStatus = function(){ GS.funds = 99999; origUpdateStatus(); };
+  GS.funds = 99999;
+
+  // scene containers, checked innermost-first — these are the actual
+  // position:relative ancestors that the game's inline left/top % values
+  // are measured against (NOT the browser window).
+  const CONTAINER_IDS = ['scene','case-scene','morning-scene','paper-panel'];
+  const EDIT_SELECTOR = '.prop, .draggable, .drawer-btn, .m-newspaper, .m-letter, .case-folder';
+
+  function addCoordOverlay(){
+    const div = document.createElement('div');
+    div.id = 'debug-coords';
+    div.textContent = 'x: 0, y: 0';
+    document.body.appendChild(div);
+    document.addEventListener('mousemove', function(e){
+      let lines = [`win px: ${e.clientX}, ${e.clientY}`];
+      for (const id of CONTAINER_IDS){
+        const c = document.getElementById(id);
+        if (!c || c.offsetParent === null) continue;
+        const box = c.getBoundingClientRect();
+        const relX = e.clientX - box.left;
+        const relY = e.clientY - box.top;
+        const inside = relX>=0 && relY>=0 && relX<=box.width && relY<=box.height;
+        const pctX = (relX/box.width*100).toFixed(2);
+        const pctY = (relY/box.height*100).toFixed(2);
+        lines.push(`#${id} ${inside?'':'(outside) '}px: ${relX.toFixed(0)}, ${relY.toFixed(0)}`);
+        lines.push(`#${id} %: ${pctX}, ${pctY}`);
+        break;
+      }
+      div.textContent = lines.join('\n');
+    });
+  }
+
+  function addDragEditor(){
+    const state = new Map(); // el -> {left, top, width, height}
+
+    function labelFor(el){
+      if (el.dataset.editLabel) return el.dataset.editLabel;
+      let lbl;
+      if (el.classList.contains('case-folder')){
+        const fid = el.querySelector('.fid');
+        lbl = 'case-folder #' + (fid ? fid.textContent : '?') + ' (regenerated — positions[] in phaseCaseSelect)';
+      } else {
+        lbl = (el.id ? '#'+el.id : null) || el.title || (el.getAttribute('onclick')||'').split('(')[0] || el.className.split(' ')[0];
+      }
+      el.dataset.editLabel = lbl;
+      return lbl;
+    }
+
+    function buildReport(){
+      const lines = [];
+      state.forEach((v, el) => {
+        let css = `left:${v.left}%; top:${v.top}%; width:${v.width}%;`;
+        if (v.height != null) css += ` height:${v.height}%;`;
+        lines.push(`${labelFor(el)}\n  style="${css}"`);
+      });
+      return lines.join('\n\n') || '(drag an element to begin)';
+    }
+
+    function refreshLog(){
+      const log = document.getElementById('edit-log');
+      if (log) log.textContent = buildReport();
+    }
+
+    function recordFromEl(el, parentRect, hasHeight){
+      const r = el.getBoundingClientRect();
+      state.set(el, {
+        left: ((r.left - parentRect.left) / parentRect.width * 100).toFixed(2),
+        top: ((r.top - parentRect.top) / parentRect.height * 100).toFixed(2),
+        width: (r.width / parentRect.width * 100).toFixed(2),
+        height: hasHeight ? (r.height / parentRect.height * 100).toFixed(2) : null,
+      });
+    }
+
+    let dragging = null;
+    let moved = false;
+
+    document.addEventListener('mousedown', (e) => {
+      const el = e.target.closest(EDIT_SELECTOR);
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const parent = el.offsetParent || el.parentElement;
+      const parentRect = parent.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      moved = false;
+      const forceHeight = el.classList.contains('m-newspaper') || el.classList.contains('m-letter');
+      dragging = {
+        el, parentRect, resize: e.shiftKey, hasHeight: forceHeight || !!el.style.height,
+        startX: e.clientX, startY: e.clientY,
+        startLeft: elRect.left - parentRect.left,
+        startTop: elRect.top - parentRect.top,
+        startWidth: elRect.width, startHeight: elRect.height,
+      };
+    }, true);
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - dragging.startX;
+      const dy = e.clientY - dragging.startY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+      const { el, parentRect, hasHeight } = dragging;
+      if (dragging.resize){
+        const w = Math.max(4, dragging.startWidth + dx);
+        const h = Math.max(4, dragging.startHeight + dy);
+        el.style.width = (w / parentRect.width * 100).toFixed(2) + '%';
+        if (hasHeight) el.style.height = (h / parentRect.height * 100).toFixed(2) + '%';
+      } else {
+        const l = dragging.startLeft + dx;
+        const t = dragging.startTop + dy;
+        el.style.left = (l / parentRect.width * 100).toFixed(2) + '%';
+        el.style.top = (t / parentRect.height * 100).toFixed(2) + '%';
+      }
+      recordFromEl(el, parentRect, hasHeight);
+      refreshLog();
+    });
+
+    document.addEventListener('mouseup', () => { dragging = null; });
+
+    // Only swallow the game's own click handlers (deskBio(),
+    // showDeskForCase(), etc.) when the mousedown actually turned into a
+    // drag — a plain click still navigates normally, so buttons that are
+    // also drag targets (drawer icons, case folders) keep working.
+    document.addEventListener('click', (e) => {
+      if (moved && e.target.closest(EDIT_SELECTOR)) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    function tagEditable(){
+      document.querySelectorAll(EDIT_SELECTOR).forEach(el => el.classList.add('edit-target'));
+    }
+    new MutationObserver(tagEditable).observe(document.body, { childList: true, subtree: true });
+    tagEditable();
+
+    const panel = document.createElement('div');
+    panel.id = 'edit-panel';
+    panel.innerHTML = '<div class="hdr">EDIT MODE — drag to move, shift+drag to resize</div>' +
+      '<button id="edit-copy">Copy CSS</button><button id="edit-clear">Clear</button>' +
+      '<div class="hdr" style="margin-top:10px">Jump to screen</div>' +
+      '<div id="edit-jump"></div>' +
+      '<div class="hdr" style="margin-top:10px">Jump to day</div>' +
+      '<div id="edit-jump-days"></div>' +
+      '<div class="hdr" style="margin-top:10px">Story endings</div>' +
+      '<div id="edit-jump-endings"></div>' +
+      '<div class="hdr" style="margin-top:10px">Personality endings</div>' +
+      '<div id="edit-jump-personality"></div>' +
+      '<pre id="edit-log"></pre>';
+    document.body.appendChild(panel);
+    document.getElementById('edit-copy').onclick = () => {
+      navigator.clipboard?.writeText(buildReport());
+      const btn = document.getElementById('edit-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy CSS'; }, 900);
+    };
+    document.getElementById('edit-clear').onclick = () => { state.clear(); refreshLog(); };
+
+    // Jump straight to any screen without relying on the game's own
+    // click-driven navigation — safe even mid-drag-testing.
+    const jumpBtns = [
+      ['Title', () => enterPhase('TITLE')],
+      ['Morning (Day 1)', () => { if (!GS.day) GS.day = 1; if (!GS.morningMailList) startDay(GS.day || 1); else phaseMorning(); }],
+      ['Case Select', () => {
+        if (!GS.day) GS.day = 1;
+        if (!GS.dayCases || !GS.dayCases.length) GS.startNewDay();
+        enterPhase('CASE_SELECT');
+      }],
+      ['Desk (first case)', () => {
+        if (!GS.day) GS.day = 1;
+        if (!GS.dayCases || !GS.dayCases.length) GS.startNewDay();
+        const cid = GS.dayCases[0] || Object.keys(GD.CASES)[0];
+        showDeskForCase(cid);
+      }],
+    ];
+    const jumpWrap = document.getElementById('edit-jump');
+    jumpBtns.forEach(([label, fn]) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'display:block;width:100%;text-align:left;margin:0 0 4px;';
+      b.onclick = () => { try { fn(); } catch (err) { console.error('[edit] jump failed:', err); } };
+      jumpWrap.appendChild(b);
+    });
+
+    // Per-day jump buttons — regenerate that day's mail/cases and land
+    // on its morning screen, skipping the days before it.
+    const dayWrap = document.getElementById('edit-jump-days');
+    for (let d = 1; d <= 6; d++){
+      const b = document.createElement('button');
+      b.textContent = 'Day ' + d;
+      b.style.cssText = 'display:inline-block;width:31%;text-align:center;margin:0 2% 4px 0;';
+      b.onclick = () => { try { startDay(d); } catch (err) { console.error('[edit] jump failed:', err); } };
+      dayWrap.appendChild(b);
+    }
+    const day7Btn = document.createElement('button');
+    day7Btn.textContent = 'Day 7';
+    day7Btn.style.cssText = 'display:inline-block;width:31%;text-align:center;margin:0 2% 4px 0;';
+    day7Btn.onclick = () => { try { showDay7(); } catch (err) { console.error('[edit] jump failed:', err); } };
+    dayWrap.appendChild(day7Btn);
+
+    // The 3 top-level story endings.
+    const endingWrap = document.getElementById('edit-jump-endings');
+    const storyEndings = [
+      ['Day 7 — Standard', () => { GS.setFlag('reclamation_day_triggered', false); showDay7(); }],
+      ['Day 7 — Reclamation Day', () => { GS.setFlag('reclamation_day_triggered', true); showDay7(); }],
+      ['Suspension (game over)', () => endGameSuspension()],
+    ];
+    storyEndings.forEach(([label, fn]) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'display:block;width:100%;text-align:left;margin:0 0 4px;';
+      b.onclick = () => { try { fn(); } catch (err) { console.error('[edit] jump failed:', err); } };
+      endingWrap.appendChild(b);
+    });
+
+    // All 8 personality endings — force the axis signs that produce each
+    // code, then run the normal ending phase.
+    const personalityWrap = document.getElementById('edit-jump-personality');
+    Object.keys(GD.PERSONALITY_NAMES).forEach(code => {
+      const b = document.createElement('button');
+      b.textContent = code + ' — ' + GD.PERSONALITY_NAMES[code];
+      b.style.cssText = 'display:block;width:100%;text-align:left;margin:0 0 4px;';
+      b.onclick = () => {
+        try {
+          GS.axisA = code[0] === 'F' ? 1 : -1;
+          GS.axisB = code[1] === 'P' ? 1 : -1;
+          GS.axisC = code[2] === 'I' ? 1 : -1;
+          phaseEnding();
+        } catch (err) { console.error('[edit] jump failed:', err); }
+      };
+      personalityWrap.appendChild(b);
+    });
+
+    refreshLog();
+  }
+
+  function init(){ addCoordOverlay(); addDragEditor(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<!-- ═══════════════════════════════════════════════════════════════
+     END EDIT MODE
+═══════════════════════════════════════════════════════════════ -->
+
+</body>
+</html>
